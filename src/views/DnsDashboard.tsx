@@ -1,5 +1,7 @@
 import React from 'react';
 
+import getStatusColor from '../utils/getStatusColor';
+
 function DnsDashboard({ data }: { data: Record<string, any>[] }) {
   if (!data || !Array.isArray(data) || data.length === 0) return null;
   return (
@@ -11,26 +13,32 @@ function DnsDashboard({ data }: { data: Record<string, any>[] }) {
           </div>
           {row.http_status !== undefined && (
             <div>
-              <strong>HTTP Status:</strong> <span className="ml-2">{row.http_status}</span>
+              <strong>HTTP Status:</strong>
+              <span className={`ml-2 ${getStatusColor('Status HTTP', row.http_status)}`}>{row.http_status}</span>
             </div>
           )}
           {row.ssl_status !== undefined && (
-            <div>
-              <strong>SSL Status:</strong> <span className="ml-2">{row.ssl_status}</span>
+           <div>
+              <strong>SSL Status:</strong>
+              <span className={`ml-2 ${getStatusColor('Status SSL', row.ssl_status)}`}>{row.ssl_status}</span>
             </div>
           )}
           <div>
             <strong>DNS Records:</strong>
             <ul className="ml-4 list-disc">
               {Object.entries(row)
-                .filter(([k]) => ['A','NS','MX','TXT','CNAME','AAAA'].includes(k))
+                .filter(([k]) => ['A', 'NS', 'MX', 'TXT', 'CNAME', 'AAAA'].includes(k))
                 .map(([k, v]) => (
-                  <li key={k}><strong>{k}:</strong> <span className="ml-1">{v || 'N/A'}</span></li>
+                  <li key={k}>
+                    <strong>{k}:</strong> <span className={`ml-2 ${getStatusColor('null', v)}`}>{v}</span>
+                  </li>
                 ))}
             </ul>
           </div>
           {row.mail_A && (
-            <div><strong>mail_A:</strong> <span className="ml-2">{row.mail_A}</span></div>
+            <div>
+                <strong>mail_A:</strong> <span className={`ml-2 ${getStatusColor('null', row.mail_A)}`}>{row.mail_A}</span>
+            </div>
           )}
           {(row.performance || row.lighthouse_average) && (
             <div>
@@ -61,4 +69,4 @@ function DnsDashboard({ data }: { data: Record<string, any>[] }) {
   );
 }
 
-export default DnsDashboard; 
+export default DnsDashboard;

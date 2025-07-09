@@ -4,6 +4,7 @@ import FaqDashboard from './FaqDashboard';
 import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
+import Buttons from '../components/Buttons';
 
 function AskScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
@@ -139,20 +140,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
           />
           <ChooseFolder folderPath={folderPath} handleChooseFolder={handleChooseFolder} />
           {/* Proxy and headless controls removed, now set in SettingsPage */}
-          <div className="flex mb-4 space-x-2">
-            <button
-              className="btn px-4 py-2 bg-green-500 text-white rounded hover:bg-green-400"
-              onClick={handleStartScraping}
-            >
-              Scarica i dati ora 📑
-            </button>
-            <button
-              className="btn btn-stop px-4 py-2 bg-red-500 text-white rounded hover:bg-red-400"
-              onClick={handleStopScraping}
-            >
-              Stop
-            </button>
-          </div>
+          <Buttons handleStartScraping={handleStartScraping} handleStopScraping={handleStopScraping} />
         </section>
       )}
       {viewMode === 'dashboard' && (
@@ -165,13 +153,13 @@ function AskScraperForm({ viewMode = 'scraping' }) {
         <section className="bg-slate-800 rounded shadow p-4 mt-6">
           <div className="flex justify-between items-center mb-4">
             <button
-              className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-400"
+              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded bg-yellow-700 hover:bg-yellow-800"
               onClick={() => setSelectedPage(null)}
             >
               Torna alla lista
             </button>
             <button
-              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-400"
+              className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded "
               onClick={() => setShowRaw((r) => !r)}
             >
               {showRaw ? 'Vista Formattata' : 'Vista JSON'}

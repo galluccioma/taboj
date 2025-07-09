@@ -227,7 +227,8 @@ const api = {
     headless: boolean,
     useProxy: boolean,
     customProxy: string,
-    fullBackup: boolean
+    fullBackup: boolean,
+    downloadMedia: boolean
   ) => {
     ipcRenderer.invoke(
       'start-scraping',
@@ -237,7 +238,8 @@ const api = {
       headless,
       useProxy,
       customProxy,
-      fullBackup
+      fullBackup,
+      downloadMedia
     );
   },
   stopScraping: () => {

@@ -18,7 +18,7 @@ function MapsDashboard({ data }: { data: Record<string, any>[] }) {
           <div><strong>Query di ricerca:</strong> <span className="ml-2">{row.searchQuery}</span></div>
           {row.csvPath && (
             <button
-              className="mt-2 px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-400"
+              className="mt-2 px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded bg-yellow-700 hover:bg-yellow-800"
               onClick={async () => {
                 const filePath = row.csvPath;
                 const folderPath = filePath.substring(0, filePath.lastIndexOf('/'));

@@ -41,6 +41,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
 
   const handleSave = async () => {
     setSaving(true);
+    alert("Cartella aggiornata con successo")
     setError('');
     try {
       if (window.electron && (window.electron as any).invoke) {
@@ -56,7 +57,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
     <div className=" mx-auto p-8 mt-8 bg-slate-800 rounded shadow text-white">
       {onBack && (
         <button
-          className="mb-4 px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-400"
+          className="mb-4 px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded bg-yellow-700 hover:bg-yellow-800"
           onClick={onBack}
         >
           Indietro
@@ -75,7 +76,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
             readOnly
           />
           <button
-            className="btn px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400"
+            className="btn px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded "
             onClick={handleChooseFolder}
             type="button"
           >
@@ -122,7 +123,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
         </div>
       </div>
       <button
-        className="btn px-4 py-2 bg-green-500 text-white rounded hover:bg-green-400"
+        className="btn px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
         onClick={handleSave}
         disabled={saving}
       >

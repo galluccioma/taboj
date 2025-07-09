@@ -16,13 +16,13 @@ const CsvFileList: React.FC<CsvFileListProps> = ({ files, onView, onDelete, load
           <span className="truncate max-w-xs">{file.split(/[\\/]/).pop() || file}</span>
           <div className="flex gap-2">
             <button
-              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-400"
+              className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded "
               onClick={() => onView(file)}
             >
               Vedi
             </button>
             <button
-              className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-400"
+              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded bg-yellow-700 hover:bg-yellow-800"
               onClick={async () => {
                 const folderPath = file.substring(0, file.lastIndexOf('/'));
                 if (window.electron && window.electron.invoke && folderPath) {
@@ -33,7 +33,7 @@ const CsvFileList: React.FC<CsvFileListProps> = ({ files, onView, onDelete, load
               Mostra File
             </button>
             <button
-              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-400"
+              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
               onClick={() => onDelete(file)}
             >
               Elimina

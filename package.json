@@ -38,6 +38,7 @@
     "chrome-launcher": "^1.2.0",
     "csv-parse": "^5.6.0",
     "electron-is-dev": "^2.0.0",
+    "electron-window-state": "^5.0.3",
     "fast-xml-parser": "^5.2.5",
     "i18next": "^23.11.5",
     "json-2-csv": "^5.5.9",

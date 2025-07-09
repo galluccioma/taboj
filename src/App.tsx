@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AppBar from './components/AppBar';
+import Sidebar from './components/Sidebar';
 import MapsScraperForm from './views/MapsScraperForm';
 import DnsScraperForm from './views/DnsScraperForm';
 import AskScraperForm from './views/AskScraperForm';
@@ -13,9 +14,13 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [lastScrapingType, setLastScrapingType] = useState(scrapingType);
   const [lastViewMode, setLastViewMode] = useState(viewMode);
+  // Sidebar open state for desktop layout
+  // (Sidebar manages its own open state, but we need to add left padding to content)
 
   useEffect(() => {
-    window.Main && window.Main.removeLoading();
+    if (window.Main) {
+      window.Main.removeLoading();
+    }
   }, []);
 
   let formComponent;
@@ -50,22 +55,20 @@ function App() {
 
   return (
     <SettingsProvider>
-      <div className="flex flex-col min-h-screen">
+      <div className="flex min-h-screen bg-slate-900">
+        {/* Sidebar overlays content on mobile, is fixed on desktop */}
         <AppBar
-          selectedType={showSettings ? 'settings' : scrapingType}
-          onChangeType={handleChangeType}
           viewMode={viewMode}
           onChangeViewMode={setViewMode}
-          onOpenSettings={handleOpenSettings}
           title={showSettings ? 'Impostazioni' : undefined}
         />
-        <div className="flex-1 flex flex-col items-center justify-start pt-8 pb-24">
-          <main className="w-full max-w-7xl">
-            {showSettings ? (
-              <SettingsPage onBack={handleCloseSettings} />
-            ) : (
-              formComponent
-            )}
+
+        {/* Main content, add left margin for sidebar on desktop */}
+        <div className="flex-1 flex items-center justify-start transition-all duration-300">
+          <Sidebar selectedType={showSettings ? 'settings' : scrapingType} onChangeType={handleChangeType} onOpenSettings={handleOpenSettings}
+          />
+          <main className="w-full max-w-7xl p-16 mx-auto h-full ">
+            {showSettings ? <SettingsPage onBack={handleCloseSettings} /> : formComponent}
           </main>
         </div>
       </div>

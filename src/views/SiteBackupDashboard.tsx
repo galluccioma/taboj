@@ -1,37 +1,16 @@
 import React from 'react';
-
-function getStatusColor(field: string, value: any) {
-  switch (field) {
-    case 'Status HTTP':
-      return value === '400' ? 'text-red-600' : '';
-    case 'Keywords':
-      return value === 'NO KEYWORDS' ? 'text-red-600' : '';
-    case 'CMS rilevato':
-      return value === 'WordPress' || value === 'Prestashop' ? 'text-green-600' : 'text-red-600';
-    case 'Strumenti analitici':
-      return value && value !== 'NESSUNO' ? 'text-green-600' : 'text-red-600';
-    case 'Cookie banner':
-      return value && value !== 'NESSUNO' ? 'text-green-600' : 'text-red-600';
-    default:
-      return '';
-  }
-}
+import getStatusColor from '../utils/getStatusColor';
 
 function getTitleColor(
   title: string,
-  context: { hasH2: boolean; orderWarningIndexes: Map<number, string>; currentIndex: number }
 ) {
   const match = title.match(/(H\d)\s*"(.*?)"\s*\((\d+)\s*caratteri\)/);
   if (!match) return '';
   const length = parseInt(match[3], 10);
-
-  // If this title is out of order, mark as warning
-  if (context.orderWarningIndexes.has(context.currentIndex)) {
-    return 'text-yellow-500';
-  }
-
+  
+  // Colori in base alla lunghezza
   if (length >= 50 && length <= 60) return '';
-  if ((length >= 40 && length < 50) || (length > 60 && length <= 70)) return 'text-yellow-500';
+  if ((length >= 40 && length < 50) || (length > 60 && length <= 70)) return 'text-yellow-600';
   return 'text-red-600';
 }
 
@@ -83,17 +62,18 @@ function SiteBackupDashboard({ data }: { data: Record<string, any>[] }) {
                 ⚠️ Attenzione: sono presenti più tag H1!
               </div>
             )}
+            {!hasH2 && (
+              <div className="text-yellow-500 font-semibold">
+                ⚠️ Attenzione: manca il tag H2!
+              </div>
+            )}
             <div>
               <strong>Titoli & Consigli:</strong>
               <ul className="ml-2 list-disc">
                 {titles.map((titolo: string) => (
                   <li
                     key={titolo.trim()}
-                    className={getTitleColor(titolo, {
-                      hasH2,
-                      orderWarningIndexes: new Map(), // not used anymore
-                      currentIndex: 0 // not used anymore
-                    })}
+                    className={getTitleColor(titolo)}
                   >
                     {titolo.trim()}
                   </li>

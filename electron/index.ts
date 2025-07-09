@@ -2,6 +2,7 @@
 import path, { join } from 'path';
 import os from 'os';
 import fs from 'fs';
+import windowStateKeeper from 'electron-window-state';
 import { parse } from 'csv-parse/sync';
 
 // Packages
@@ -13,18 +14,20 @@ import { performDnsScraping } from '../src/scrapers/dnsScraping.js';
 import { performFaqScraping } from '../src/scrapers/askScraping.js';
 import { performBackupSite } from '../src/scrapers/backupSite.js';
 
-
-const height = 600;
-const width = 800;
-
 function createWindow() {
-  // Create the browser window.
+  // Recupera lo stato precedente della finestra o imposta i default
+  const mainWindowState = windowStateKeeper({
+    defaultWidth: 800,
+    defaultHeight: 600
+  });
+
   const window = new BrowserWindow({
-    width,
-    height,
-    //  change to false to use AppBar
+    x: mainWindowState.x,
+    y: mainWindowState.y,
+    width: mainWindowState.width,
+    height: mainWindowState.height,
+    // altre opzioni...
     frame: false,
-    show: true,
     resizable: true,
     fullscreenable: true,
     webPreferences: {
@@ -32,14 +35,19 @@ function createWindow() {
     }
   });
 
-  const port = process.env.PORT || 3000;
-  const url = isDev ? `http://localhost:${port}` : join(__dirname, '../dist-vite/index.html');
+  // Associa lo stato alla finestra
+  mainWindowState.manage(window);
 
-  // and load the index.html of the app.
+  // Resto del tuo codice...
+  const port = process.env.PORT || 3000;
+  const url = isDev
+    ? `http://localhost:${port}`
+    : join(__dirname, '../dist-vite/index.html');
+
   if (isDev) {
-    window?.loadURL(url);
+    window.loadURL(url);
   } else {
-    window?.loadFile(url);
+    window.loadFile(url);
   }
   // Open the DevTools.
   // window.webContents.openDevTools();
@@ -122,7 +130,8 @@ async function performScraping(
   doWayback?: boolean,
   useProxy?: boolean,
   customProxy?: string,
-  fullBackup?: boolean
+  fullBackup?: boolean,
+  downloadMedia?: boolean // <-- add this
 ) {
   if (scrapingType === 'maps') {
     await performMapsScraping(searchString, folderPath, win, headless, useProxy, customProxy);
@@ -133,7 +142,7 @@ async function performScraping(
   } else if (scrapingType === 'backup') {
     // Support both old and new argument order
     if (typeof useProxy === 'boolean' && typeof customProxy === 'string' && typeof fullBackup === 'boolean') {
-      await performBackupSite(searchString, folderPath, win, headless, useProxy, customProxy, fullBackup);
+      await performBackupSite(searchString, folderPath, win, headless, useProxy, customProxy, fullBackup, downloadMedia);
     } else {
       // fallback: if only 4 args, treat as (searchString, folderPath, win, headless)
       await performBackupSite(searchString, folderPath, win, headless);
@@ -151,10 +160,10 @@ ipcMain.handle(
     console.log('Avvio dello scraping per:', args);
     const win = BrowserWindow.getAllWindows()[0];
     if (args[1] === 'backup') {
-      // backup: searchString, 'backup', folderPath, headless, useProxy, customProxy, fullBackup
-      const [searchString, scrapingType, folderPath, headless, useProxy, customProxy, fullBackup] = args;
+      // backup: searchString, 'backup', folderPath, headless, useProxy, customProxy, fullBackup, downloadMedia
+      const [searchString, scrapingType, folderPath, headless, useProxy, customProxy, fullBackup, downloadMedia] = args;
       win.webContents.send('status', 'Inizio dello scraping...');
-      await performScraping(searchString, scrapingType, folderPath, win, headless, undefined, undefined, undefined, undefined, useProxy, customProxy, fullBackup);
+      await performScraping(searchString, scrapingType, folderPath, win, headless, undefined, undefined, undefined, undefined, useProxy, customProxy, fullBackup, downloadMedia);
     } else {
       // maps/faq/dns: pass all args as before
       win.webContents.send('status', 'Inizio dello scraping...');

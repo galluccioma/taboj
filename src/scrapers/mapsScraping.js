@@ -236,8 +236,7 @@ export async function performMapsScraping(searchString, folderPath, win, headles
   if (!folderPath) {
     const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output'));
     folderPath = path.join(baseOutput, 'maps');
-    win.webContents.send('status', `[INFO] No folderPath provided, using default: ${folderPath}`);
-  }
+    win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);  }
   const searchQueries = searchString.split(',').map(q => q.trim()).filter(Boolean);
   let allData = [];
   let stopped = false;

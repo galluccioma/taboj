@@ -133,8 +133,7 @@ export async function performDnsScraping(
   if (!folderPath) {
     const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output'));
     folderPath = path.join(baseOutput, 'dns');
-    win.webContents.send('status', `[INFO] No folderPath provided, using default: ${folderPath}`);
-  }
+    win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);  }
   // Defensive: ensure dnsRecordTypes is always an array
   if (!Array.isArray(dnsRecordTypes)) {
     if (typeof dnsRecordTypes === 'string') {

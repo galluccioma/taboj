@@ -59,10 +59,72 @@ async function getUrlsFromSitemap(sitemapUrl, win) {
 }
 
 /**
+ * Download all media (images, videos) from a page's HTML into the media folder.
+ * Logs each download attempt and result.
+ */
+async function downloadAllMediaFromHtml({ html, url, cleanTitle, mediaFolder, win }) {
+  const $ = cheerio.load(html);
+  // Download images
+  const imgUrls = [];
+  $('img').each((_, el) => {
+    const src = $(el).attr('src');
+    if (src && !src.startsWith('data:')) imgUrls.push(src);
+  });
+  // Download videos
+  const videoUrls = [];
+  $('video').each((_, el) => {
+    const src = $(el).attr('src');
+    if (src && !src.startsWith('data:')) videoUrls.push(src);
+    // Also check <source> tags inside <video>
+    $(el).find('source').each((__, sourceEl) => {
+      const s = $(sourceEl).attr('src');
+      if (s && !s.startsWith('data:')) videoUrls.push(s);
+    });
+  });
+  const allMedia = [...imgUrls, ...videoUrls];
+  const baseUrl = new URL(url);
+  if (!fs.existsSync(mediaFolder)) fs.mkdirSync(mediaFolder, { recursive: true });
+  if (allMedia.length === 0) {
+    if (win?.webContents) win.webContents.send('status', `[media] Nessun media trovato nella pagina: ${url}`);
+    console.log(`[media] Nessun media trovato nella pagina: ${url}`);
+  }
+  for (let i = 0; i < allMedia.length; i++) {
+    let mediaUrl = allMedia[i];
+    try {
+      // Resolve relative URLs
+      if (!/^https?:\/\//i.test(mediaUrl)) {
+        mediaUrl = new URL(mediaUrl, baseUrl.origin).href;
+      }
+      const ext = path.extname(mediaUrl).split('?')[0] || '';
+      const filename = `${sanitizeFilename(cleanTitle)}_${i}${ext}`;
+      const filePath = path.join(mediaFolder, filename);
+      if (win?.webContents) win.webContents.send('status', `[media] Downloading: ${mediaUrl} -> ${filePath}`);
+      console.log(`[media] Downloading: ${mediaUrl} -> ${filePath}`);
+      // Download and save
+      const response = await axios.get(mediaUrl, { responseType: 'arraybuffer', timeout: 30000 });
+      fs.writeFileSync(filePath, response.data);
+      if (win?.webContents) win.webContents.send('status', `📥 Media salvato: ${filePath}`);
+      console.log(`[media] Saved: ${filePath}`);
+    } catch (err) {
+      if (win?.webContents) win.webContents.send('status', `❌ Errore download media: ${mediaUrl} (${err.message})`);
+      console.log(`[media] Errore download media: ${mediaUrl} (${err.message})`);
+    }
+  }
+}
+
+/**
  * Naviga la pagina, fa screenshot desktop + mobile, analizza contenuti,
  * salva CSV singolo e ritorna dati per CSV globale
+ *
+ * @param {string} url
+ * @param {object} browser
+ * @param {string} baseFolderPath
+ * @param {object} win
+ * @param {string} subFolderName
+ * @param {boolean} downloadMedia - If true, download all media to media folder
+ * @param {string} mediaFolder - Path to the media folder
  */
-async function screenshotAndAnalyze(url, browser, baseFolderPath, win, subFolderName = '') {
+async function screenshotAndAnalyze(url, browser, baseFolderPath, win, subFolderName = '', downloadMedia = false, mediaFolder = '') {
   const page = await browser.newPage();
 
   // -- Screenshot desktop --
@@ -106,6 +168,12 @@ async function screenshotAndAnalyze(url, browser, baseFolderPath, win, subFolder
 
   // Parsing html (puoi usare quello desktop o ricaricare, qui uso html desktop)
   const $ = cheerio.load(html);
+
+  // --- MEDIA DOWNLOAD LOGIC ---
+  if (downloadMedia && mediaFolder) {
+    await downloadAllMediaFromHtml({ html, url, cleanTitle, mediaFolder, win });
+  }
+  // --- END MEDIA DOWNLOAD LOGIC ---
 
   const metaTitle = title;
   const metaTitleLength = title.length;
@@ -246,13 +314,20 @@ async function screenshotAndAnalyze(url, browser, baseFolderPath, win, subFolder
   };
 }
 
-async function analyzePageForGlobalCsv(url, browser) {
+async function analyzePageForGlobalCsv(url, browser, downloadMedia = false, mediaFolder = '', win = null) {
   const page = await browser.newPage();
   const response = await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
   const status = response ? response.status() : 'NO RESPONSE';
   const html = await page.content();
   const title = await page.title();
+  const cleanTitle = sanitizeFilename(title);
   console.log('[DEBUG] analyzePageForGlobalCsv html length:', html.length, 'title:', title);
+
+  // --- MEDIA DOWNLOAD LOGIC ---
+  if (downloadMedia && mediaFolder) {
+    await downloadAllMediaFromHtml({ html, url, cleanTitle, mediaFolder, win });
+  }
+  // --- END MEDIA DOWNLOAD LOGIC ---
 
   if (!html || !title) {
     console.error('[ERROR] Failed to load or parse page:', url);
@@ -399,15 +474,24 @@ async function analyzePageForGlobalCsv(url, browser) {
  * - scarica sitemap, estrae URL
  * - per ogni URL chiama screenshotAndAnalyze (che salva CSV singolo)
  * - accumula dati per creare CSV globale alla fine
+ *
+ * @param {string} searchString
+ * @param {string} folderPath
+ * @param {object} win
+ * @param {boolean} headless
+ * @param {boolean} useProxy
+ * @param {string} customProxy
+ * @param {boolean} fullBackup
+ * @param {boolean} downloadMedia - If true, download all media to media folder
  */
-export async function performBackupSite(searchString, folderPath, win, headless = true, useProxy = false, customProxy = '', fullBackup = true) {
+export async function performBackupSite(searchString, folderPath, win, headless = true, useProxy = false, customProxy = '', fullBackup = true, downloadMedia = false) {
   console.log('[DEBUG] fullBackup (backend):', fullBackup, typeof fullBackup);
   // Use base output folder if none provided
   let outputFolderPath = folderPath;
   if (!outputFolderPath) {
     const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output'));
     outputFolderPath = path.join(baseOutput, 'backup');
-    console.log('[INFO] No folderPath provided, using default:', outputFolderPath);
+    win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${outputFolderPath}`);  
   }
   // Sanitize the searchString for filename/folder use
   const sanitizedQuery = searchString ? sanitizeFilename(searchString) : 'global';
@@ -421,6 +505,8 @@ export async function performBackupSite(searchString, folderPath, win, headless 
   console.log('[DEBUG] fullBackup (backend, coerced):', isFullBackup, typeof isFullBackup);
   if (win?.webContents) win.webContents.send('reset-logs');
   if (!fs.existsSync(outputFolderPath)) fs.mkdirSync(outputFolderPath, { recursive: true });
+
+  const mediaFolder = path.join(outputFolderPath, 'media');
 
   try {
     let urlsWithSitemap;
@@ -451,10 +537,10 @@ export async function performBackupSite(searchString, folderPath, win, headless 
         let data;
         if (isFullBackup) {
           if (win?.webContents) win.webContents.send('status', `[progress] Backup completo: ${loc}`);
-          data = await screenshotAndAnalyze(loc, browser, outputFolderPath, win, sitemapName);
+          data = await screenshotAndAnalyze(loc, browser, outputFolderPath, win, sitemapName, downloadMedia, mediaFolder);
         } else {
           if (win?.webContents) win.webContents.send('status', `[progress] Analisi pagina: ${loc}`);
-          data = await analyzePageForGlobalCsv(loc, browser);
+          data = await analyzePageForGlobalCsv(loc, browser, downloadMedia, mediaFolder, win);
         }
         allCsvData.push(data);
       } catch (err) {

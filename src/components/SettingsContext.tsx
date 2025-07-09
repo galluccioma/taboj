@@ -19,7 +19,9 @@ function getInitialSettings() {
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {}
+      } catch {
+        // Ignore JSON parse errors and use default settings
+      }
     }
   }
   return {
@@ -29,7 +31,7 @@ function getInitialSettings() {
   };
 }
 
-export const SettingsProvider = ({ children }: { children: ReactNode }) => {
+export function SettingsProvider({ children }: { children: ReactNode }) {
   const [useProxy, setUseProxy] = useState<boolean>(getInitialSettings().useProxy);
   const [customProxy, setCustomProxy] = useState<string>(getInitialSettings().customProxy);
   const [headless, setHeadless] = useState<boolean>(getInitialSettings().headless);
@@ -41,12 +43,24 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     );
   }, [useProxy, customProxy, headless]);
 
+  const contextValue = React.useMemo(
+    () => ({
+      useProxy,
+      setUseProxy,
+      customProxy,
+      setCustomProxy,
+      headless,
+      setHeadless,
+    }),
+    [useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless]
+  );
+
   return (
-    <SettingsContext.Provider value={{ useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless }}>
+    <SettingsContext.Provider value={contextValue}>
       {children}
     </SettingsContext.Provider>
   );
-};
+}
 
 export function useSettings() {
   const context = useContext(SettingsContext);

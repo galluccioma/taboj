@@ -69,7 +69,7 @@ export async function scrapePeopleAlsoAsk(searchString, browser, win, existingPa
       win.webContents.send('status', `\n[process] Domanda #${results.length + 1}: "${question}"`);
       try {
         await container.click();
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         const description = await page.evaluate((question) => {
           const pairNode = Array.from(document.querySelectorAll('div.related-question-pair[data-q]')).find(
             (el) => el.getAttribute('data-q') === question
@@ -111,9 +111,9 @@ export async function performFaqScraping(searchString, folderPath, win, headless
   stopFlag.value = false; // Reset stop flag at the start
   // Use base output folder if none provided
   if (!folderPath) {
-    const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output'));
+    const baseOutput = global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output');
     folderPath = path.join(baseOutput, 'faq');
-    win.webContents.send('status', `[INFO] No folderPath provided, using default: ${folderPath}`);
+    win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);
   }
   const searchQueries = searchString
     .split(',')
@@ -174,7 +174,10 @@ export function askUserToSolveCaptcha() {
 }
 
 function sanitizeFilename(str) {
-  return str.replace(/[^a-z0-9_\- ]/gi, '').replace(/\s+/g, '_').slice(0, 100);
+  return str
+    .replace(/[^a-z0-9_\- ]/gi, '')
+    .replace(/\s+/g, '_')
+    .slice(0, 100);
 }
 
 export async function saveFaqData(data, startTime, folderPath, win, searchString) {
