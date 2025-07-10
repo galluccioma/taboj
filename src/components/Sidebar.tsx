@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Map, Globe, FileQuestionMark, DatabaseBackup, Menu, X, SettingsIcon } from 'lucide-react';
+import { Map, Globe, Search, DatabaseBackup, Menu, X, SettingsIcon, Tags } from 'lucide-react';
 import customIcon from '../assets/icons/icon.png';
 
 interface SidebarProps {
@@ -62,7 +62,7 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
   const sidebarContent = (
     <>
     <aside
-      className={`flex flex-col h-full mt-12 bg-slate-800 border-r border-gray-600 text-white shadow-lg transition-all duration-300 ${
+      className={`fixed top-0 flex flex-col h-full pt-12 bg-slate-800 border-r border-gray-600 text-white shadow-lg transition-all duration-300 ${
         open ? 'w-64' : 'w-16'
       }  top-0 left-0 z-50 undraggable`}
       style={{ minHeight: '100vh' }}
@@ -105,7 +105,7 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
         <SidebarItem
           open={open}
           selected={selectedType === 'ask'}
-          icon={<FileQuestionMark className="w-5 h-5" />}
+          icon={<Search className="w-5 h-5" />}
           label="Ask"
           onClick={() => onChangeType('ask')}
         />
@@ -115,6 +115,13 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
           icon={<DatabaseBackup className="w-5 h-5" />}
           label="SEO Backup"
           onClick={() => onChangeType('backup')}
+        />
+        <SidebarItem
+          open={open}
+          selected={selectedType === 'googleads'}
+          icon={<Tags className="w-5 h-5" />} // You may want to use a different icon
+          label="Google Ads"
+          onClick={() => onChangeType('googleads')}
         />
       </nav>
     </aside>

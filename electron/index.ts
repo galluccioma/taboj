@@ -13,6 +13,9 @@ import { performMapsScraping } from '../src/scrapers/mapsScraping.js';
 import { performDnsScraping } from '../src/scrapers/dnsScraping.js';
 import { performFaqScraping } from '../src/scrapers/askScraping.js';
 import { performBackupSite } from '../src/scrapers/backupSite.js';
+import performGoogleAdsScraping from '../src/scrapers/googleAds.js';
+import performMetaAdsScraping from '../src/scrapers/metaAds.js';
+
 
 function createWindow() {
   // Recupera lo stato precedente della finestra o imposta i default
@@ -113,6 +116,15 @@ ipcMain.handle('choose-folder', async () => {
   return result.filePaths[0];
 });
 
+ipcMain.handle('choose-file', async (_event, options) => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: options && options.filters ? options.filters : undefined
+  });
+  if (result.canceled || !result.filePaths.length) return null;
+  return result.filePaths[0];
+});
+
 ipcMain.on('stop-scraping', () => {
   stopFlag.value = true;
 });
@@ -123,53 +135,63 @@ async function performScraping(
   scrapingType: string,
   folderPath: string,
   win: BrowserWindow,
-  headless: boolean,
-  dnsRecordTypes?: string[],
-  doAMail?: boolean,
-  doLighthouse?: boolean,
-  doWayback?: boolean,
-  useProxy?: boolean,
-  customProxy?: string,
-  fullBackup?: boolean,
-  downloadMedia?: boolean // <-- add this
+  options: any = {}
 ) {
   if (scrapingType === 'maps') {
+    const { headless, useProxy, customProxy } = options;
     await performMapsScraping(searchString, folderPath, win, headless, useProxy, customProxy);
   } else if (scrapingType === 'faq') {
-    await performFaqScraping(searchString, folderPath, win, headless, useProxy, customProxy);
+    const { headless, scrapeTypes, useProxy, customProxy, maxToProcess } = options;
+    await performFaqScraping(searchString, folderPath, win, headless, useProxy, customProxy, maxToProcess, scrapeTypes);
   } else if (scrapingType === 'dns') {
+    const { dnsRecordTypes, doAMail, doLighthouse, doWayback } = options;
     await performDnsScraping(searchString, folderPath, win, dnsRecordTypes || [], doAMail, doLighthouse, doWayback);
   } else if (scrapingType === 'backup') {
-    // Support both old and new argument order
+    const { headless, useProxy, customProxy, fullBackup, downloadMedia } = options;
     if (typeof useProxy === 'boolean' && typeof customProxy === 'string' && typeof fullBackup === 'boolean') {
       await performBackupSite(searchString, folderPath, win, headless, useProxy, customProxy, fullBackup, downloadMedia);
     } else {
-      // fallback: if only 4 args, treat as (searchString, folderPath, win, headless)
       await performBackupSite(searchString, folderPath, win, headless);
     }
+  } else if (scrapingType === 'googleads') {
+    const { headless, useProxy, customProxy, googleKeyFilePath } = options;
+    await performGoogleAdsScraping(searchString, folderPath, win, headless, useProxy, customProxy, googleKeyFilePath);
+  } else if (scrapingType === 'metaads') {
+    const { headless, useProxy, customProxy, metaAdsAccessToken } = options;
+    await performMetaAdsScraping(searchString, folderPath, win, headless, useProxy, customProxy, metaAdsAccessToken);
   } else {
     win.webContents.send('status', 'Tipo di scraping non valido.');
   }
 }
 
 // Gestisci l'evento per avviare lo scraping tramite IPC (Inter-Process Communication)
-
 ipcMain.handle(
   'start-scraping',
   async (_event, ...args) => {
     console.log('Avvio dello scraping per:', args);
     const win = BrowserWindow.getAllWindows()[0];
-    if (args[1] === 'backup') {
-      // backup: searchString, 'backup', folderPath, headless, useProxy, customProxy, fullBackup, downloadMedia
-      const [searchString, scrapingType, folderPath, headless, useProxy, customProxy, fullBackup, downloadMedia] = args;
-      win.webContents.send('status', 'Inizio dello scraping...');
-      await performScraping(searchString, scrapingType, folderPath, win, headless, undefined, undefined, undefined, undefined, useProxy, customProxy, fullBackup, downloadMedia);
+    const scrapingType = args[1];
+    if (scrapingType === 'faq') {
+      // Restore positional argument passing for FAQ
+      const [searchString, , folderPath, headless, scrapeTypes, useProxy, customProxy, maxToProcess] = args;
+      await performFaqScraping(searchString, folderPath, win, headless, useProxy, customProxy, maxToProcess, scrapeTypes);
+    } else if (scrapingType === 'maps') {
+      const [searchString, , folderPath, headless, useProxy, customProxy] = args;
+      await performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy });
+    } else if (scrapingType === 'dns') {
+      const [searchString, , folderPath, , dnsRecordTypes, doAMail, doLighthouse, doWayback] = args;
+      await performScraping(searchString, scrapingType, folderPath, win, { dnsRecordTypes, doAMail, doLighthouse, doWayback });
+    } else if (scrapingType === 'backup') {
+      const [searchString, , folderPath, headless, useProxy, customProxy, fullBackup, downloadMedia] = args;
+      await performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, fullBackup, downloadMedia });
+    } else if (scrapingType === 'googleads') {
+      const [advertiser, , folderPath, headless, useProxy, customProxy, googleKeyFilePath] = args;
+      await performScraping(advertiser, scrapingType, folderPath, win, { headless, useProxy, customProxy, googleKeyFilePath });
+    } else if (scrapingType === 'metaads') {
+      const [searchString, , folderPath, headless, useProxy, customProxy, metaAdsAccessToken] = args;
+      await performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, metaAdsAccessToken });
     } else {
-      // maps/faq/dns: pass all args as before
-      win.webContents.send('status', 'Inizio dello scraping...');
-      // Explicitly pass the expected arguments for performScraping
-      const [searchString, scrapingType, folderPath, headless, dnsRecordTypes, doAMail, doLighthouse, doWayback, useProxy, customProxy] = args;
-      await performScraping(searchString, scrapingType, folderPath, win, headless, dnsRecordTypes, doAMail, doLighthouse, doWayback, useProxy, customProxy);
+      win.webContents.send('status', 'Tipo di scraping non valido.');
     }
   }
 );
@@ -185,9 +207,8 @@ ipcMain.handle('delete-backup-files', async (_event, filePaths: string[]) => {
     return { success: true };
   } catch (err) {
     let errorMsg = 'Unknown error';
-    if (err && typeof err === 'object' && 'message' in err) {
-      errorMsg = (err as any).message;
-    }
+    if (err instanceof Error) errorMsg = err.message;
+    else if (typeof err === 'object' && err && 'message' in err) errorMsg = String((err as any).message);
     return { success: false, error: errorMsg };
   }
 });
@@ -251,9 +272,8 @@ ipcMain.handle('delete-faq-csv-files', async (_event, filePaths) => {
     return { success: true };
   } catch (err) {
     let errorMsg = 'Unknown error';
-    if (err && typeof err === 'object' && 'message' in err) {
-      errorMsg = (err as any).message;
-    }
+    if (err instanceof Error) errorMsg = err.message;
+    else if (typeof err === 'object' && err && 'message' in err) errorMsg = String((err as any).message);
     return { success: false, error: errorMsg };
   }
 });
@@ -293,9 +313,8 @@ ipcMain.handle('delete-dns-csv-files', async (_event, filePaths) => {
     return { success: true };
   } catch (err) {
     let errorMsg = 'Unknown error';
-    if (err && typeof err === 'object' && 'message' in err) {
-      errorMsg = (err as any).message;
-    }
+    if (err instanceof Error) errorMsg = err.message;
+    else if (typeof err === 'object' && err && 'message' in err) errorMsg = String((err as any).message);
     return { success: false, error: errorMsg };
   }
 });
@@ -335,9 +354,90 @@ ipcMain.handle('delete-maps-csv-files', async (_event, filePaths) => {
     return { success: true };
   } catch (err) {
     let errorMsg = 'Unknown error';
-    if (err && typeof err === 'object' && 'message' in err) {
-      errorMsg = (err as any).message;
+    if (err instanceof Error) errorMsg = err.message;
+    else if (typeof err === 'object' && err && 'message' in err) errorMsg = String((err as any).message);
+    return { success: false, error: errorMsg };
+  }
+});
+
+// IPC: List all CSV files in output/googleads
+ipcMain.handle('list-googleads-csv-files', async () => {
+  const baseOutput = ((global as any).getBaseOutputFolder ? (global as any).getBaseOutputFolder() : path.join(process.cwd(), 'output'));
+  const googleAdsDir = path.join(baseOutput, 'googleads');
+  if (!fs.existsSync(googleAdsDir)) return [];
+  return fs.readdirSync(googleAdsDir)
+    .filter(f => f.endsWith('.csv'))
+    .map(f => path.join(googleAdsDir, f));
+});
+
+// IPC: Read a CSV file and return all records (Google Ads)
+ipcMain.handle('read-googleads-csv', async (_event, filePath) => {
+  if (!fs.existsSync(filePath)) return null;
+  const content = fs.readFileSync(filePath, 'utf8');
+  const records = parse(content, {
+    columns: true,
+    skip_empty_lines: true,
+    delimiter: ',',
+    quote: '"',
+    relax_quotes: true
+  });
+  return records || [];
+});
+
+// IPC: Delete Google Ads CSV files
+ipcMain.handle('delete-googleads-csv-files', async (_event, filePaths) => {
+  try {
+    for (const file of filePaths) {
+      if (file && fs.existsSync(file)) {
+        fs.unlinkSync(file);
+      }
     }
+    return { success: true };
+  } catch (err) {
+    let errorMsg = 'Unknown error';
+    if (err instanceof Error) errorMsg = err.message;
+    else if (typeof err === 'object' && err && 'message' in err) errorMsg = String((err as any).message);
+    return { success: false, error: errorMsg };
+  }
+});
+
+// IPC: List all CSV files in output/metaads
+ipcMain.handle('list-metaads-csv-files', async () => {
+  const baseOutput = ((global as any).getBaseOutputFolder ? (global as any).getBaseOutputFolder() : path.join(process.cwd(), 'output'));
+  const metaAdsDir = path.join(baseOutput, 'metaads');
+  if (!fs.existsSync(metaAdsDir)) return [];
+  return fs.readdirSync(metaAdsDir)
+    .filter(f => f.endsWith('.csv'))
+    .map(f => path.join(metaAdsDir, f));
+});
+
+// IPC: Read a CSV file and return all records (Meta Ads)
+ipcMain.handle('read-metaads-csv', async (_event, filePath) => {
+  if (!fs.existsSync(filePath)) return null;
+  const content = fs.readFileSync(filePath, 'utf8');
+  const records = parse(content, {
+    columns: true,
+    skip_empty_lines: true,
+    delimiter: ',',
+    quote: '"',
+    relax_quotes: true
+  });
+  return records || [];
+});
+
+// IPC: Delete Meta Ads CSV files
+ipcMain.handle('delete-metaads-csv-files', async (_event, filePaths) => {
+  try {
+    for (const file of filePaths) {
+      if (file && fs.existsSync(file)) {
+        fs.unlinkSync(file);
+      }
+    }
+    return { success: true };
+  } catch (err) {
+    let errorMsg = 'Unknown error';
+    if (err instanceof Error) errorMsg = err.message;
+    else if (typeof err === 'object' && err && 'message' in err) errorMsg = String((err as any).message);
     return { success: false, error: errorMsg };
   }
 });

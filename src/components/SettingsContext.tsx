@@ -7,11 +7,14 @@ interface SettingsContextProps {
   setCustomProxy: (value: string) => void;
   headless: boolean;
   setHeadless: (value: boolean) => void;
+  metaAdsAccessToken: string;
+  setMetaAdsAccessToken: (value: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextProps | undefined>(undefined);
 
 const SETTINGS_KEY = 'app_settings';
+const DEFAULT_META_ADS_ACCESS_TOKEN = '';
 
 function getInitialSettings() {
   if (typeof window !== 'undefined') {
@@ -28,6 +31,7 @@ function getInitialSettings() {
     useProxy: false,
     customProxy: '',
     headless: true,
+    metaAdsAccessToken: DEFAULT_META_ADS_ACCESS_TOKEN,
   };
 }
 
@@ -35,13 +39,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [useProxy, setUseProxy] = useState<boolean>(getInitialSettings().useProxy);
   const [customProxy, setCustomProxy] = useState<string>(getInitialSettings().customProxy);
   const [headless, setHeadless] = useState<boolean>(getInitialSettings().headless);
+  const [metaAdsAccessToken, setMetaAdsAccessToken] = useState<string>(getInitialSettings().metaAdsAccessToken || DEFAULT_META_ADS_ACCESS_TOKEN);
 
   useEffect(() => {
     localStorage.setItem(
       SETTINGS_KEY,
-      JSON.stringify({ useProxy, customProxy, headless })
+      JSON.stringify({ useProxy, customProxy, headless, metaAdsAccessToken })
     );
-  }, [useProxy, customProxy, headless]);
+  }, [useProxy, customProxy, headless, metaAdsAccessToken]);
 
   const contextValue = React.useMemo(
     () => ({
@@ -51,8 +56,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setCustomProxy,
       headless,
       setHeadless,
+      metaAdsAccessToken,
+      setMetaAdsAccessToken,
     }),
-    [useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless]
+    [useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless, metaAdsAccessToken, setMetaAdsAccessToken]
   );
 
   return (

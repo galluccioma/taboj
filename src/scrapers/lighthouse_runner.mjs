@@ -21,10 +21,10 @@ if (!url) {
     const runnerResult = await lighthouse.default(url, options);
     const lhr = runnerResult.lhr;
     const scores = {
-      performance: lhr.categories.performance?.score ?? 0,
-      accessibility: lhr.categories.accessibility?.score ?? 0,
-      seo: lhr.categories.seo?.score ?? 0,
-      bestPractices: lhr.categories['best-practices']?.score ?? 0,
+      performance: (lhr.categories.performance?.score ?? 0) * 100,
+      accessibility: (lhr.categories.accessibility?.score ?? 0) * 100,
+      seo: (lhr.categories.seo?.score ?? 0) * 100,
+      bestPractices: (lhr.categories['best-practices']?.score ?? 0) * 100,
       average:
         ((lhr.categories.performance?.score ?? 0) +
           (lhr.categories.accessibility?.score ?? 0) +

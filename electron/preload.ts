@@ -190,35 +190,15 @@ const api = {
   chooseFolder: async () => {
     return ipcRenderer.invoke('choose-folder');
   },
+  chooseFile: async (options?: any) => {
+    return ipcRenderer.invoke('choose-file', options);
+  },
   getUsername: async () => {
     return ipcRenderer.invoke('get-username');
   },
   // Overload for DNS/maps/faq
-  startScraping: (
-    searchString: string,
-    scrapingType: 'dns' | 'maps' | 'faq',
-    folderPath: string,
-    headless: boolean,
-    dnsRecordTypes: string[],
-    doAMail: boolean,
-    doLighthouse: boolean,
-    doWayback: boolean,
-    useProxy: boolean,
-    customProxy: string
-  ) => {
-    ipcRenderer.invoke(
-      'start-scraping',
-      searchString,
-      scrapingType,
-      folderPath,
-      headless,
-      dnsRecordTypes,
-      doAMail,
-      doLighthouse,
-      doWayback,
-      useProxy,
-      customProxy
-    );
+  startScraping: (...args: any[]) => {
+    ipcRenderer.invoke('start-scraping', ...args);
   },
   // For backup
   startBackupScraping: (
@@ -258,6 +238,15 @@ const api = {
     ipcRenderer.send('user-action-confirmed');
   },
   invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
+  listGoogleAdsCsvFiles: async () => {
+    return ipcRenderer.invoke('list-googleads-csv-files');
+  },
+  readGoogleAdsCsv: async (filePath: string) => {
+    return ipcRenderer.invoke('read-googleads-csv', filePath);
+  },
+  deleteGoogleAdsCsvFiles: async (filePaths: string[]) => {
+    return ipcRenderer.invoke('delete-googleads-csv-files', filePaths);
+  },
 };
 
 contextBridge.exposeInMainWorld('Main', api);

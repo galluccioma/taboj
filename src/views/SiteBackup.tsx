@@ -48,8 +48,8 @@ function BackupFolderList({ folders, onView, onDelete, onOpen, loading }: any) {
 
 function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
   const [username, setUsername] = useState('Utente');
-  const [searchString, setSearchString] = useState('');
-  const [folderPath, setFolderPath] = useState('');
+  const [searchString, setSearchString] = useState(() => localStorage.getItem('backup_searchString') || '');
+  const [folderPath, setFolderPath] = useState(() => localStorage.getItem('backup_folderPath') || '');
   const [statusMessages, setStatusMessages] = useState<string[]>([]);
   const [fullBackup, setFullBackup] = useState(false);
   const statusRef = useRef<HTMLDivElement>(null);
@@ -110,10 +110,19 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
     }
   }, [viewMode]);
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchString(e.target.value);
+    localStorage.setItem('backup_searchString', e.target.value);
+  };
+  const handleFolderChange = (path: string) => {
+    setFolderPath(path);
+    localStorage.setItem('backup_folderPath', path);
+  };
+
   const handleChooseFolder = async () => {
     if (window.electron && window.electron.chooseFolder) {
       const path = await window.electron.chooseFolder();
-      if (path) setFolderPath(path);
+      if (path) handleFolderChange(path);
     }
   };
 
@@ -185,7 +194,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
             className="input w-full mb-2 px-3 py-2 border rounded text-black"
             placeholder="Url della sitemap o delle pagine separati da virgola"
             value={searchString}
-            onChange={(e) => setSearchString(e.target.value)}
+            onChange={handleSearchChange}
           />
           <ChooseFolder folderPath={folderPath} handleChooseFolder={handleChooseFolder} />
           {/* Proxy and headless controls removed, now set in SettingsPage */}

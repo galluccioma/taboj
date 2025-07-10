@@ -18,6 +18,20 @@ declare global {
         doLighthouse: boolean,
         doWayback: boolean,
         useProxy: boolean,
+        customProxy: string,
+        maxToProcess?: number
+      ) => void;
+      //Overload for dns
+      startScraping: (
+        searchString: string,
+        scrapingType: 'dns' ,
+        folderPath: string,
+        headless: boolean,
+        dnsRecordTypes: string[],
+        doAMail: boolean,
+        doLighthouse: boolean,
+        doWayback: boolean,
+        useProxy: boolean,
         customProxy: string
       ) => void;
       // Overload for backup

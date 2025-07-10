@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 
-function MapsDashboard({ data }: { data: Record<string, any>[] }) {
+function GoogleAdsDashboard({ data }: { data: Record<string, any>[] }) {
+  // This dashboard supports both Google Ads and Meta Ads CSV data.
   if (!data || !Array.isArray(data) || data.length === 0) return null;
   const headers = Object.keys(data[0] || {});
+
+  // State for filters
   const [filters, setFilters] = useState<{ [key: string]: string }>({});
+  // State for hidden columns
   const [hiddenCols, setHiddenCols] = useState<string[]>([]);
+
+  // Filtered data
   const filteredData = data.filter(row =>
     headers.every(header =>
       !filters[header] ||
       String(row[header] ?? '').toLowerCase().includes(filters[header].toLowerCase())
     )
   );
+
+  // Visible headers
   const visibleHeaders = headers.filter(h => !hiddenCols.includes(h));
+
   return (
     <div className="overflow-x-auto">
       <div className="mb-2 flex flex-wrap gap-2">
@@ -70,4 +79,4 @@ function MapsDashboard({ data }: { data: Record<string, any>[] }) {
   );
 }
 
-export default MapsDashboard; 
+export default GoogleAdsDashboard; 

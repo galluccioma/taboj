@@ -8,8 +8,8 @@ import Buttons from '../components/Buttons';
 
 function MapsScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
-  const [searchString, setSearchString] = useState('');
-  const [folderPath, setFolderPath] = useState('');
+  const [searchString, setSearchString] = useState(() => localStorage.getItem('maps_searchString') || '');
+  const [folderPath, setFolderPath] = useState(() => localStorage.getItem('maps_folderPath') || '');
   const [statusMessages, setStatusMessages] = useState<string[]>([]);
   const statusRef = useRef<HTMLDivElement>(null);
   const [csvFiles, setCsvFiles] = useState<string[]>([]);
@@ -62,10 +62,19 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
     }
   }, [viewMode]);
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchString(e.target.value);
+    localStorage.setItem('maps_searchString', e.target.value);
+  };
+  const handleFolderChange = (path: string) => {
+    setFolderPath(path);
+    localStorage.setItem('maps_folderPath', path);
+  };
+
   const handleChooseFolder = async () => {
     if (window.electron && window.electron.chooseFolder) {
       const path = await window.electron.chooseFolder();
-      if (path) setFolderPath(path);
+      if (path) handleFolderChange(path);
     }
   };
 
@@ -136,7 +145,7 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
             className="input w-full mb-2 px-3 py-2 border rounded text-black"
             placeholder="Inserisci le query di ricerca separate da virgola"
             value={searchString}
-            onChange={(e) => setSearchString(e.target.value)}
+            onChange={handleSearchChange}
           />
           <ChooseFolder folderPath={folderPath} handleChooseFolder={handleChooseFolder} />
           {/* Proxy and headless controls removed, now set in SettingsPage */}

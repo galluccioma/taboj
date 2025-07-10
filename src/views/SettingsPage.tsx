@@ -10,7 +10,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const { useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless } = useSettings();
+  const { useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless, googleAdsAdvertiser, setGoogleAdsAdvertiser, googleAdsClientId, setGoogleAdsClientId, googleAdsClientSecret, setGoogleAdsClientSecret, googleAdsRedirectUri, setGoogleAdsRedirectUri } = useSettings();
 
   useEffect(() => {
     // Fetch current output folder from backend
@@ -84,6 +84,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
           </button>
         </div>
       </div>
+
       {/* Proxy settings */}
       <div className="mb-4">
         <span className="block mb-2 font-semibold">Proxy</span>
@@ -110,7 +111,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
       </div>
       {/* Headless mode */}
       <div className="mb-4">
-        <span className="block mb-2 font-semibold">Modalit&agrave; bot</span>
+        <span className="block mb-2 font-semibold">Modalit&agrave; Headless</span>
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -119,7 +120,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
             onChange={e => setHeadless(e.target.checked)}
             className="mr-2"
           />
-          <span>Rimuovi la spunta solo in caso di problemi [modalit&agrave; bot]</span>
+          <span>Rimuovi la spunta solo in caso di problemi</span>
         </div>
       </div>
       <button

@@ -111,7 +111,7 @@ export async function saveMapsData(data, startTime, folderPath, win, searchQueri
     .replace(/\s+/g, '_')
     .replace(/[^a-zA-Z0-9_]/g, '');
   if (queriesStr.length > 40) queriesStr = `${queriesStr.slice(0, 40)}...`;
-  const filename = `maps_output-${queriesStr}-${(Math.random() + 1).toString(36).substring(7)}.csv`;
+  const filename = `maps_output-${queriesStr}-${Date.now()}.csv`;
   fs.writeFileSync(path.join(folderPath, filename), csv, 'utf-8');
   win.webContents.send('status', `[+] Record salvati nel file CSV (${filename})`);
   win.webContents.send(

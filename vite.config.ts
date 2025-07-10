@@ -15,7 +15,7 @@ const buildElectron = (isDev: boolean) => ({
   minify: !isDev,
   outDir: join(root, 'dist-electron'),
   rollupOptions: {
-    external: Object.keys(pkg.dependencies || {})
+    external: [...Object.keys(pkg.dependencies || {}), 'open']
   }
 });
 

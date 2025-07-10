@@ -6,6 +6,7 @@ import DnsScraperForm from './views/DnsScraperForm';
 import AskScraperForm from './views/AskScraperForm';
 import SiteBackup from './views/SiteBackup';
 import SettingsPage from './views/SettingsPage';
+import GoogleAdsScraperForm from './views/GoogleAdsScraperForm';
 import { SettingsProvider } from './components/SettingsContext';
 
 function App() {
@@ -32,6 +33,8 @@ function App() {
     formComponent = <AskScraperForm viewMode={viewMode} />;
   } else if (scrapingType === 'backup') {
     formComponent = <SiteBackup viewMode={viewMode} />;
+  } else if (scrapingType === 'googleads') {
+    formComponent = <GoogleAdsScraperForm viewMode={viewMode} />;
   }
 
   const handleOpenSettings = () => {

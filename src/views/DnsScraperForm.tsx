@@ -8,8 +8,8 @@ import Buttons from '../components/Buttons';
 
 function DnsScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
-  const [searchString, setSearchString] = useState('');
-  const [folderPath, setFolderPath] = useState('');
+  const [searchString, setSearchString] = useState(() => localStorage.getItem('dns_searchString') || '');
+  const [folderPath, setFolderPath] = useState(() => localStorage.getItem('dns_folderPath') || '');
   const [dnsRecordTypes, setDnsRecordTypes] = useState<string[]>(['A', 'NS', 'MX', 'TXT', 'CNAME', 'AAAA']);
   const [doAMail, setDoAMail] = useState(true);
   const [doLighthouse, setDoLighthouse] = useState(false);
@@ -68,10 +68,19 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
     }
   }, [viewMode]);
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchString(e.target.value);
+    localStorage.setItem('dns_searchString', e.target.value);
+  };
+  const handleFolderChange = (path: string) => {
+    setFolderPath(path);
+    localStorage.setItem('dns_folderPath', path);
+  };
+
   const handleChooseFolder = async () => {
     if (window.electron && window.electron.chooseFolder) {
       const path = await window.electron.chooseFolder();
-      if (path) setFolderPath(path);
+      if (path) handleFolderChange(path);
     }
   };
 
@@ -152,9 +161,9 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
           <input
             type="text"
             className="input w-full mb-2 px-3 py-2 border rounded text-black"
-            placeholder="Inserisci i domini separati da virgola"
+            placeholder="Inserisci i domini separati da virgola (non includere https://)"
             value={searchString}
-            onChange={(e) => setSearchString(e.target.value)}
+            onChange={handleSearchChange}
           />
           <div className="mb-4 space-y-2">
             <div>

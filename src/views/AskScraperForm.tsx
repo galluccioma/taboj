@@ -8,8 +8,8 @@ import Buttons from '../components/Buttons';
 
 function AskScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
-  const [searchString, setSearchString] = useState('');
-  const [folderPath, setFolderPath] = useState('');
+  const [searchString, setSearchString] = useState(() => localStorage.getItem('ask_searchString') || '');
+  const [folderPath, setFolderPath] = useState(() => localStorage.getItem('ask_folderPath') || '');
   const [statusMessages, setStatusMessages] = useState<string[]>([]);
   const statusRef = useRef<HTMLDivElement>(null);
   const [csvFiles, setCsvFiles] = useState<string[]>([]);
@@ -17,6 +17,17 @@ function AskScraperForm({ viewMode = 'scraping' }) {
   const [selectedPage, setSelectedPage] = useState<any | null>(null);
   const [backupPages, setBackupPages] = useState<any[]>([]);
   const [showRaw, setShowRaw] = useState(false);
+  const [maxToProcess, setMaxToProcess] = useState(() => {
+    const val = localStorage.getItem('ask_maxToProcess');
+    return val ? Number(val) : 50;
+  });
+  const [scrapeTypes, setScrapeTypes] = useState(() => {
+    const saved = localStorage.getItem('ask_scrapeTypes');
+    // Remove 'serp' if present in saved state
+    let initial = saved ? JSON.parse(saved) : ['ask'];
+    initial = initial.filter((t: string) => t !== 'serp');
+    return initial;
+  });
   const { useProxy, customProxy, headless } = useSettings();
 
   useEffect(() => {
@@ -62,10 +73,37 @@ function AskScraperForm({ viewMode = 'scraping' }) {
     }
   }, [viewMode]);
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchString(e.target.value);
+    localStorage.setItem('ask_searchString', e.target.value);
+  };
+  const handleFolderChange = (path: string) => {
+    setFolderPath(path);
+    localStorage.setItem('ask_folderPath', path);
+  };
+  const handleMaxToProcessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Math.max(1, Math.min(100, Number(e.target.value)));
+    setMaxToProcess(value);
+    localStorage.setItem('ask_maxToProcess', value.toString());
+  };
+
+  const handleScrapeTypeChange = (type: string) => {
+    setScrapeTypes((prev: string[]) => {
+      let updated;
+      if (prev.includes(type)) {
+        updated = prev.filter((t) => t !== type);
+      } else {
+        updated = [...prev, type];
+      }
+      localStorage.setItem('ask_scrapeTypes', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const handleChooseFolder = async () => {
     if (window.electron && window.electron.chooseFolder) {
       const path = await window.electron.chooseFolder();
-      if (path) setFolderPath(path);
+      if (path) handleFolderChange(path);
     }
   };
 
@@ -74,18 +112,22 @@ function AskScraperForm({ viewMode = 'scraping' }) {
       window.alert('Compila il campo di ricerca.');
       return;
     }
+    if (scrapeTypes.length === 0) {
+      window.alert('Seleziona almeno un tipo di scraping.');
+      return;
+    }
     if (window.electron && window.electron.startScraping) {
       window.electron.startScraping(
         searchString,
         'faq',
         folderPath,
         headless,
-        [],
-        false,
-        false,
-        false,
+        scrapeTypes,
         useProxy,
-        customProxy
+        customProxy,
+        maxToProcess,
+        undefined,
+        undefined
       );
     }
   };
@@ -136,8 +178,40 @@ function AskScraperForm({ viewMode = 'scraping' }) {
             className="input w-full mb-2 px-3 py-2 border rounded text-black"
             placeholder="Inserisci le query di ricerca separate da virgola"
             value={searchString}
-            onChange={(e) => setSearchString(e.target.value)}
+            onChange={handleSearchChange}
           />
+          <div className="mb-2 flex gap-4">
+            <label className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={scrapeTypes.includes('ask')}
+                onChange={() => handleScrapeTypeChange('ask')}
+              />
+              Ask (FAQ)
+            </label>
+            <label className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={scrapeTypes.includes('ricerche_correlate')}
+                onChange={() => handleScrapeTypeChange('ricerche_correlate')}
+              />
+              Ricerche correlate
+            </label>
+          </div>
+          <div className="mb-2">
+            <label className="block text-sm mb-1" htmlFor="maxToProcess">
+              Numero massimo di domande da processare per query (1-100):
+            </label>
+            <input
+              id="maxToProcess"
+              type="number"
+              min={1}
+              max={100}
+              value={maxToProcess}
+              onChange={handleMaxToProcessChange}
+              className="input w-32 px-2 py-1 border rounded text-black"
+            />
+          </div>
           <ChooseFolder folderPath={folderPath} handleChooseFolder={handleChooseFolder} />
           {/* Proxy and headless controls removed, now set in SettingsPage */}
           <Buttons handleStartScraping={handleStartScraping} handleStopScraping={handleStopScraping} />
@@ -150,10 +224,10 @@ function AskScraperForm({ viewMode = 'scraping' }) {
         </section>
       )}
       {selectedPage && viewMode === 'dashboard' && (
-        <section className="bg-slate-800 rounded shadow p-4 mt-6">
+        <section className="max-w-6xl bg-slate-800 rounded shadow p-4 mt-6">
           <div className="flex justify-between items-center mb-4">
             <button
-              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded bg-yellow-700 hover:bg-yellow-800"
+              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
               onClick={() => setSelectedPage(null)}
             >
               Torna alla lista

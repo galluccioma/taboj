@@ -5,7 +5,7 @@ import * as dns from 'dns/promises';
 import axios from 'axios';
 import { execFile } from 'child_process';
 import { stopFlag } from '../utils/config';
-const { ipcMain } = require('electron');
+
 
 
 
@@ -109,7 +109,7 @@ export async function saveDnsData(data, startTime, folderPath, win, dnsRecordTyp
     console.log(csvLines[1]);
   }
   const sanitizedQuery = searchString ? sanitizeFilename(searchString) : 'query';
-  const filename = `dns_output-${sanitizedQuery}-${(Math.random() + 1).toString(36).substring(7)}.csv`;
+  const filename = `dns_output-${sanitizedQuery}-${Date.now()}.csv`;
   fs.writeFileSync(path.join(folderPath, filename), csv, 'utf-8');
   win.webContents.send('status', `[+] Record salvati nel file CSV (${filename})`);
   win.webContents.send(
