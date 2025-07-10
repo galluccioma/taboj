@@ -3,10 +3,10 @@ import Footer from '../components/Footer';
 import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
-import GoogleAdsDashboard from './GoogleAdsDashboard';
+import AdsDashboard from './AdsDashboard';
 import Buttons from '../components/Buttons';
 
-function GoogleAdsScraperForm({ viewMode = 'scraping' }) {
+function AdsScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
   const [folderPath, setFolderPath] = useState(() => localStorage.getItem('googleads_folderPath') || '');
   const [statusMessages, setStatusMessages] = useState<string[]>([]);
@@ -15,7 +15,13 @@ function GoogleAdsScraperForm({ viewMode = 'scraping' }) {
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedPage, setSelectedPage] = useState<any | null>(null);
   const [showRaw, setShowRaw] = useState(false);
-  const { useProxy, customProxy, headless, googleAdsAdvertiser, setGoogleAdsAdvertiser, googleAdsClientId, googleAdsClientSecret, googleAdsRedirectUri, metaAdsAccessToken, setMetaAdsAccessToken } = useSettings();
+  const {
+    useProxy,
+    customProxy,
+    headless,
+    metaAdsAccessToken,
+    setMetaAdsAccessToken
+  } = useSettings();
   const [adType, setAdType] = useState<'google' | 'meta'>('google');
   // Meta Page ID state, persisted in localStorage
   const [metaPageId, setMetaPageId] = useState(() => localStorage.getItem('metaads_pageId') || '');
@@ -168,20 +174,26 @@ function GoogleAdsScraperForm({ viewMode = 'scraping' }) {
           </div>
           {adType === 'google' && (
             <>
-              <h2 className="text-lg mb-4">Avvia la raccolta dati dagli annunci Google Ads Transparency Center. I risultati saranno salvati in CSV.</h2>
+              <h2 className="text-lg mb-4">
+                Avvia la raccolta dati dagli annunci Google Ads Transparency Center. I risultati saranno salvati in CSV.
+              </h2>
               <div className="mb-4">
-                <label className="block text-sm mb-1" htmlFor="advertiser-input">Nome Inserzionista</label>
+                <label className="block text-sm mb-1" htmlFor="advertiser-input">
+                  Nome Inserzionista
+                </label>
                 <input
                   id="advertiser-input"
                   type="text"
                   className="input w-full px-3 py-2 border rounded text-black"
                   value={advertiser}
-                  onChange={e => setAdvertiser(e.target.value)}
+                  onChange={(e) => setAdvertiser(e.target.value)}
                   placeholder="Nome inserzionista"
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm mb-1" htmlFor="google-keyfile-input">Percorso file chiave Google Service Account (JSON)</label>
+                <label className="block text-sm mb-1" htmlFor="google-keyfile-input">
+                  Percorso file chiave Google Service Account (JSON)
+                </label>
                 <div className="flex items-center gap-2">
                   <input
                     id="google-keyfile-input"
@@ -199,33 +211,49 @@ function GoogleAdsScraperForm({ viewMode = 'scraping' }) {
                   </button>
                 </div>
               </div>
+              <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-white rounded">
+                <a href="https://console.cloud.google.com/apis/api/bigquery.googleapis.com" target="blank">
+                  🔑 Ottieni la tua chiave
+                </a>
+              </button>
             </>
           )}
           {adType === 'meta' && (
             <>
-              <h2 className="text-lg mb-4">Avvia la raccolta dati dagli annunci Meta Ad Library. I risultati saranno salvati in CSV.</h2>
+              <h2 className="text-lg mb-4">
+                Avvia la raccolta dati dagli annunci Meta Ad Library. I risultati saranno salvati in CSV.
+              </h2>
               <div className="mb-4">
-                <label className="block text-sm mb-1" htmlFor="meta-page-id-input">ID Pagina Facebook</label>
+                <label className="block text-sm mb-1" htmlFor="meta-page-id-input">
+                  ID Pagina Facebook
+                </label>
                 <input
                   id="meta-page-id-input"
                   type="text"
                   className="input w-full px-3 py-2 border rounded text-black"
                   value={metaPageId}
-                  onChange={e => setMetaPageId(e.target.value)}
+                  onChange={(e) => setMetaPageId(e.target.value)}
                   placeholder="ID Pagina Facebook"
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm mb-1" htmlFor="meta-api-key-input">Meta API Key</label>
+                <label className="block text-sm mb-1" htmlFor="meta-api-key-input">
+                  Meta API Key
+                </label>
                 <input
                   id="meta-api-key-input"
                   type="text"
                   className="input w-full px-3 py-2 border rounded text-black"
                   value={metaAdsAccessToken}
-                  onChange={e => setMetaAdsAccessToken(e.target.value)}
+                  onChange={(e) => setMetaAdsAccessToken(e.target.value)}
                   placeholder="Meta API Key"
                 />
               </div>
+                 <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-white rounded">
+                <a href="https://www.facebook.com/ads/library/api" target="blank">
+                  🔑 Ottieni la tua chiave
+                </a>
+              </button>
             </>
           )}
           <ChooseFolder folderPath={folderPath} handleChooseFolder={handleChooseFolder} />
@@ -259,7 +287,7 @@ function GoogleAdsScraperForm({ viewMode = 'scraping' }) {
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (
-            <GoogleAdsDashboard data={Array.isArray(selectedPage) ? selectedPage : [selectedPage]} />
+            <AdsDashboard data={Array.isArray(selectedPage) ? selectedPage : [selectedPage]} />
           )}
         </section>
       )}
@@ -270,4 +298,4 @@ function GoogleAdsScraperForm({ viewMode = 'scraping' }) {
   );
 }
 
-export default GoogleAdsScraperForm; 
+export default AdsScraperForm;

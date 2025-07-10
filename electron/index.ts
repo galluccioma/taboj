@@ -394,10 +394,7 @@ ipcMain.handle('delete-googleads-csv-files', async (_event, filePaths) => {
     }
     return { success: true };
   } catch (err) {
-    let errorMsg = 'Unknown error';
-    if (err instanceof Error) errorMsg = err.message;
-    else if (typeof err === 'object' && err && 'message' in err) errorMsg = String((err as any).message);
-    return { success: false, error: errorMsg };
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 });
 
@@ -435,10 +432,7 @@ ipcMain.handle('delete-metaads-csv-files', async (_event, filePaths) => {
     }
     return { success: true };
   } catch (err) {
-    let errorMsg = 'Unknown error';
-    if (err instanceof Error) errorMsg = err.message;
-    else if (typeof err === 'object' && err && 'message' in err) errorMsg = String((err as any).message);
-    return { success: false, error: errorMsg };
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 });
 
@@ -512,8 +506,7 @@ ipcMain.handle('delete-backup-folder', async (_event, folderPath: string) => {
     deleteFolderRecursive(folderPath);
     return { success: true };
   } catch (err) {
-    return { success: false, error: err.message };
-  }
+    return { success: false, error: err instanceof Error ? err.message : String(err) };  }
 });
 
 // IPC: Open backup folder
@@ -522,6 +515,5 @@ ipcMain.handle('open-backup-folder', async (_event, folderPath: string) => {
     await shell.openPath(folderPath);
     return { success: true };
   } catch (err) {
-    return { success: false, error: err.message };
-  }
+    return { success: false, error: err instanceof Error ? err.message : String(err) };  }
 });

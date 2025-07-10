@@ -28,6 +28,7 @@
         // Prettier
         "prettier/prettier": "off",
         // Typescript
+        "label-has-associated-control":"off",
         "no-restricted-syntax": "off",
         "no-use-before-define": "off",
         "no-await-in-loop":"off",

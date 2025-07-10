@@ -93,7 +93,6 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
         "Detailed Demographics",
         "Life Events",
         "In-market",
-        "Your Data",
       ];
 
       const targetingMap = {};
@@ -124,6 +123,7 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
     const csvWriter = createObjectCsvWriter({
       path: path.join(folderPath, `google_ads-${advertiser}-${Date.now()}.csv`),
       header: [
+        { id: "Campagna Attiva", title: "Campagna Attiva" },
         { id: "ID Inserzionista", title: "ID Inserzionista" },
         { id: "ID Annuncio", title: "ID Annuncio" },
         { id: "URL Annuncio", title: "URL Annuncio" },
@@ -134,7 +134,6 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
         { id: "Stato Verifica", title: "Stato Verifica" },
         { id: "Canali di Pubblicazione", title: "Canali di Pubblicazione" },
         { id: "Data Fine Ultima", title: "Data Fine Ultima" },
-        { id: "Campagna Attiva", title: "Campagna Attiva" },
         { id: "Categoria / Argomento", title: "Categoria / Argomento" },
         { id: "Finanziato da Google Grants", title: "Finanziato da Google Grants" },
         { id: "Affinity Segments", title: "Affinity Segments" },
@@ -142,7 +141,6 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
         { id: "Detailed Demographics", title: "Detailed Demographics" },
         { id: "Life Events", title: "Life Events" },
         { id: "In-market", title: "In-market" },
-        { id: "Your Data", title: "Your Data" },
       ],
     });
     await csvWriter.writeRecords(simplifiedData);

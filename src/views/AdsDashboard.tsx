@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function GoogleAdsDashboard({ data }: { data: Record<string, any>[] }) {
+function AdsDashboard({ data }: { data: Record<string, any>[] }) {
   // This dashboard supports both Google Ads and Meta Ads CSV data.
   if (!data || !Array.isArray(data) || data.length === 0) return null;
   const headers = Object.keys(data[0] || {});
@@ -79,4 +79,4 @@ function GoogleAdsDashboard({ data }: { data: Record<string, any>[] }) {
   );
 }
 
-export default GoogleAdsDashboard; 
+export default AdsDashboard; 

@@ -83,8 +83,10 @@ async function performMetaAdsScraping(pageId, folderPath, win, headless, useProx
       'Piattaforme': (ad.publisher_platforms || []).join(', ')
     }));
 
+    const nomePagina=ads[0].page_name
+
     const csvWriter = createObjectCsvWriter({
-      path: path.join(folderPath, `meta_ads_${pageId}_${Date.now()}.csv`),
+      path: path.join(folderPath, `meta_ads_${nomePagina}_${Date.now()}.csv`),
       header: [
         { id: 'ID Annuncio', title: 'ID Annuncio' },
         { id: 'Titoli', title: 'Titoli' },
