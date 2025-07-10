@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Footer from '../components/Footer';
-import FaqDashboard from './FaqDashboard';
+import AskDashboard from './AskDashboard';
 import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
@@ -167,12 +167,11 @@ function AskScraperForm({ viewMode = 'scraping' }) {
     <main className=" mx-auto p-6">
       {viewMode === 'scraping' && (
         <section className="bg-slate-800 rounded shadow p-6">
-          <h1 className="text-2xl font-bold mb-2">🔍 Ciao {username}</h1>
-          <h2 className="text-lg mb-4">
-            Questo strumento permette di cercare e scaricare domande frequenti (FAQ) da siti web in formato CSV.
-            Inserisci le query di ricerca, scegli la cartella di destinazione, configura l'uso di proxy e modalità bot,
-            quindi avvia o interrompi la raccolta dati.
-          </h2>
+          <p className="text-2xl font-bold mb-2">🔍 Ciao {username}</p>
+          <h1 className="text-2xl font-bold mb-2">💬 Benvenuto su FAQ & Correlati Scraper</h1>
+          <p className="text-lg mb-4">
+            Questo strumento permette di cercare e scaricare domande frequenti (FAQ) o Ricerche Correlate dalla SERP di Google
+          </p>
           <input
             type="text"
             className="input w-full mb-2 px-3 py-2 border rounded text-black"
@@ -240,11 +239,11 @@ function AskScraperForm({ viewMode = 'scraping' }) {
             </button>
           </div>
           {showRaw ? (
-            <pre className="bg-slate-900 text-white p-4 rounded overflow-x-auto">
+            <pre className="break-words whitespace-pre-wrap bg-slate-900 text-white p-4 rounded overflow-x-auto">
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (
-            <FaqDashboard data={selectedPage} />
+            <AskDashboard data={selectedPage} />
           )}
         </section>
       )}

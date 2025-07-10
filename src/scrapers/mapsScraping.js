@@ -6,8 +6,6 @@ import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 import { XMLParser } from 'fast-xml-parser';
-const { ipcMain } = require('electron');
-
 import removeDuplicates from '../utils/removeDuplicates';
 import { stopFlag, launchBrowser } from '../utils/config';
 

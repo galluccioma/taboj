@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Filter, EyeOff, RotateCcw } from 'lucide-react';
 
-function DnsDashboard({ data }: { data: Record<string, any>[] }) {
+function AskDashboard({ data }: { data: Record<string, any>[] }) {
   const [filters, setFilters] = useState<{ [key: string]: string }>({});
   const [hiddenCols, setHiddenCols] = useState<string[]>([]);
 
@@ -103,4 +103,4 @@ function DnsDashboard({ data }: { data: Record<string, any>[] }) {
   );
 }
 
-export default DnsDashboard;
+export default AskDashboard; 

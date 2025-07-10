@@ -30,10 +30,6 @@ function SiteBackupDashboard({ data }: { data: Record<string, any>[] }) {
               <strong>URL:</strong> <span className="ml-2">{row.Url}</span>
             </div>
             <div>
-              <strong>Status HTTP:</strong>
-              <span className={`ml-2 ${getStatusColor('Status HTTP', row['Status HTTP'])}`}>{row['Status HTTP']}</span>
-            </div>
-            <div>
               <strong>Meta Title:</strong>
               <span className={`ml-2 ${getStatusColor('Meta title[length]', row['Meta title[length]'])}`}>
                 {row['Meta title[length]']}
@@ -79,6 +75,10 @@ function SiteBackupDashboard({ data }: { data: Record<string, any>[] }) {
                   </li>
                 ))}
               </ul>
+            </div>
+            <div>
+              <strong>Status HTTP:</strong>
+              <span className={`ml-2 ${getStatusColor('Status HTTP', row['Status HTTP'])}`}>{row['Status HTTP']}</span>
             </div>
             <div>
               <strong>Strumenti analitici:</strong>

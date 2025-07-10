@@ -134,12 +134,11 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
     <main className=" mx-auto p-6">
       {viewMode === 'scraping' && (
         <section className="bg-slate-800 rounded shadow p-6">
-          <h1 className="text-2xl font-bold mb-2">🔍 Ciao {username}</h1>
-          <h2 className="text-lg mb-4">
-            Questo strumento consente di cercare e scaricare dati da Google Maps in formato CSV. Inserisci le query di
-            ricerca, scegli la cartella di destinazione, configura l'uso di proxy e modalità bot, quindi avvia o
-            interrompi la raccolta dati.
-          </h2>
+          <p className="text-2xl font-bold mb-2">🔍 Ciao {username}</p>
+          <h1 className="text-2xl font-bold mb-2">🗺️ Benvenuto su Maps Lead Scraper</h1>
+          <p className="text-lg mb-4">
+            Questo strumento consente di cercare e scaricare dati dei Lead da Google Maps. 
+          </p>
           <input
             type="text"
             className="input w-full mb-2 px-3 py-2 border rounded text-black"
@@ -175,7 +174,7 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
             </button>
           </div>
           {showRaw ? (
-            <pre className="bg-slate-900 text-white p-4 rounded overflow-x-auto">
+            <pre className="break-words whitespace-pre-wrap bg-slate-900 text-white p-4 rounded overflow-x-auto">
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (

@@ -15,13 +15,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedPage, setSelectedPage] = useState<any | null>(null);
   const [showRaw, setShowRaw] = useState(false);
-  const {
-    useProxy,
-    customProxy,
-    headless,
-    metaAdsAccessToken,
-    setMetaAdsAccessToken
-  } = useSettings();
+  const { useProxy, customProxy, headless, metaAdsAccessToken, setMetaAdsAccessToken } = useSettings();
   const [adType, setAdType] = useState<'google' | 'meta'>('google');
   // Meta Page ID state, persisted in localStorage
   const [metaPageId, setMetaPageId] = useState(() => localStorage.getItem('metaads_pageId') || '');
@@ -163,7 +157,12 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
     <main className="mx-auto p-6">
       {viewMode === 'scraping' && (
         <section className="bg-slate-800 rounded shadow p-6">
-          <h1 className="text-2xl font-bold mb-2">🟦 Meta and Google Ads Scraper</h1>
+          <p className="text-2xl font-bold mb-2">🔍 Ciao {username}</p>
+          <h1 className="text-2xl font-bold mb-2">📢 Benvenuto su Meta e Googles Ads Scraper</h1>
+           <p className="text-lg mb-4">
+            Questo strumento consente, attraverso le api ufficiali di Google Ads Transparency Center e Meta Ad Library di estrapolare
+            tutte le campagne attive e passate su Google e su Meta.
+          </p>
           <div className="mb-4 flex gap-4">
             <label>
               <input type="radio" checked={adType === 'google'} onChange={() => setAdType('google')} /> Google Ads
@@ -249,7 +248,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
                   placeholder="Meta API Key"
                 />
               </div>
-                 <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-white rounded">
+              <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-white rounded">
                 <a href="https://www.facebook.com/ads/library/api" target="blank">
                   🔑 Ottieni la tua chiave
                 </a>
@@ -283,7 +282,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
             </button>
           </div>
           {showRaw ? (
-            <pre className="bg-slate-900 text-white p-4 rounded overflow-x-auto">
+            <pre className="break-words whitespace-pre-wrap bg-slate-900 text-white p-4 rounded overflow-x-auto">
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (

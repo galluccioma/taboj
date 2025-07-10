@@ -152,12 +152,14 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
     <main className=" mx-auto p-6">
       {viewMode === 'scraping' && (
         <section className="bg-slate-800 rounded shadow p-6">
-          <h1 className="text-2xl font-bold mb-2">🔍 Ciao {username}</h1>
-          <h2 className="text-lg mb-4">
+          <p className="text-2xl font-bold mb-2">🔍 Ciao {username}</p>
+          <h1 className="text-2xl font-bold mb-2">🌐 Benvenuto su Bulk Domain Scraper</h1>
+          <p className="text-lg mb-4">
             Questo strumento consente di analizzare domini e ottenere record DNS (A, NS, MX, TXT, CNAME, AAAA),
-            effettuare audit Lighthouse e consultare la Wayback Machine. Inserisci i domini, seleziona i record e le
-            opzioni desiderate, scegli la cartella di destinazione e avvia la raccolta dati.
-          </h2>
+            effettuare audit Lighthouse, consultare la Wayback Machine e consultare la risposta HTTP (eventuali errori) e lo stato del certificato SSL. 
+            Inserisci i domini, seleziona i record e le impostazioni che ti interessano e le
+            opzioni desiderate
+          </p>
           <input
             type="text"
             className="input w-full mb-2 px-3 py-2 border rounded text-black"
@@ -240,7 +242,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
             </button>
           </div>
           {showRaw ? (
-            <pre className="bg-slate-900 text-white p-4 rounded overflow-x-auto">
+            <pre className="break-words whitespace-pre-wrap bg-slate-900 text-white p-4 rounded overflow-x-auto">
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (

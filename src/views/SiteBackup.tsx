@@ -169,7 +169,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
       await window.electron.invoke('delete-backup-files', [file]);
       setBackupFolders((folders) =>
         folders.map((f) =>
-          f.folder === folder.folder ? { ...f, files: f.files.filter((fName: string) => fName !== file) } : f
+          f.folder === f.folder ? { ...f, files: f.files.filter((fName: string) => fName !== file) } : f
         )
       );
       if (selectedPage && selectedPage.csvPath === file) {
@@ -183,12 +183,15 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
     <main className=" mx-auto p-6">
       {viewMode === 'scraping' && (
         <section className="bg-slate-800 rounded shadow p-6">
-          <h1 className="text-2xl font-bold mb-2">🔍 Ciao {username}</h1>
-          <h2 className="text-lg mb-4">
-            Questo strumento consente di effettuare il backup di siti web o sitemap, salvando i dati in formato CSV e
-            screenshot delle pagine. Inserisci l'URL o la sitemap, scegli la cartella di destinazione, configura le
-            opzioni di backup, proxy e modalità bot, quindi avvia o interrompi la raccolta dati.
-          </h2>
+          <p className="text-2xl font-bold mb-2">🔍 Ciao {username}</p>
+          <h1 className="text-2xl font-bold mb-2">💾 Benvenuto su SEO Backup</h1>
+          <p className="text-lg mb-4">
+            Questo strumento consente di effettuare un backup della SEO e visivo di siti web o singole pagine.
+            É possibile inserire l&apos;url di una pagina, di più pagine separate da virgola o di un&apos;intera sitemap, il sistema scaricherà (se selezionati):
+            <li>- un csv riepilogativo del contenuto seo e testuale dell&apos;intero sito o delle pagine selezionate.</li>
+           <li> - un csv per ogni pagina analizzata</li>
+           <li> - uno screenshot per la versione desktop e uno per la versione mobile di ogni pagina analizzata.</li>
+          </p>
           <input
             type="text"
             className="input w-full mb-2 px-3 py-2 border rounded text-black"
@@ -250,7 +253,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
         <section className="bg-slate-800 rounded shadow p-4 mt-6">
           <div className="flex justify-between items-center mb-4">
             <button
-              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded bg-yellow-700 hover:bg-yellow-800"
+              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
               onClick={() => setSelectedPage(null)}
             >
               Torna alla lista
@@ -263,7 +266,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
             </button>
           </div>
           {showRaw ? (
-            <pre className="bg-slate-900 text-white p-4 rounded overflow-x-auto">
+            <pre className="break-words whitespace-pre-wrap bg-slate-900 text-white p-4 rounded overflow-x-auto">
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (

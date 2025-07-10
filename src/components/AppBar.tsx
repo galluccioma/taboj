@@ -89,6 +89,7 @@ function AppBar({ viewMode, onChangeViewMode, title }: AppBarProps) {
             >
               Scraping
             </button>
+            
             <button
               className={`undraggable hover:bg-gray-700 px-4 py-2 rounded-r ${
                 viewMode === 'dashboard' ? 'bg-slate-900 hover:bg-slate-900 text-white' : 'bg-slate-700 text-gray-300'

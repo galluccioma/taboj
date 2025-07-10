@@ -1,7 +1,5 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-
-import { ipcMain } from 'electron';
 import converter from 'json-2-csv';
 import fs from 'fs';
 import path from 'path';
