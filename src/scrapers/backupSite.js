@@ -514,7 +514,11 @@ export async function performBackupSite(searchString, folderPath, win, headless 
       urlsWithSitemap = await getUrlsFromSitemap(searchString, win);
     } else {
       // Support multiple URLs separated by comma
-      const urls = searchString.split(',').map(u => u.trim()).filter(Boolean);
+      const urls = searchString.split(',').map(u => u.trim()).filter(Boolean)
+        .map(u => {
+          if (/^https?:\/\//i.test(u)) return u;
+          return 'https://' + u;
+        });
       urlsWithSitemap = urls.map(u => ({ loc: u, sitemap: u }));
       if (win?.webContents) win.webContents.send('status', `[info] Analisi pagine: ${urls.join(', ')}`);
     }

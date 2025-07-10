@@ -25,6 +25,7 @@
 - **DNS Scraper**: Collects DNS records, HTTP/SSL status, and can run Lighthouse and Wayback Machine checks for domains.
 - **People Also Ask Scraper**: Gathers "People Also Ask" questions and answers from Google search results for given queries.
 - **Site Backup & SEO Audit**: Downloads website pages (from sitemap or list), takes screenshots, analyzes SEO metadata, detects analytics/cookie banners/CMS, and saves all data in CSV format.
+- **Google Ads and Meta Scraper**: Gathers all info from Google Transparency and Meta Ad Library given users.
 - **Proxy Support**: Optional proxy usage for all Puppeteer-based scrapers.
 - **Headless/Non-headless Browsing**: Choose between visible or background browser automation.
 - **CSV Export**: All modules export results as CSV files for easy analysis.

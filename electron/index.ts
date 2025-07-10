@@ -16,6 +16,10 @@ import { performBackupSite } from '../src/scrapers/backupSite.js';
 import performGoogleAdsScraping from '../src/scrapers/googleAds.js';
 import performMetaAdsScraping from '../src/scrapers/metaAds.js';
 
+ipcMain.handle('get-assets-path', () => {
+  // In produzione potresti voler usare: process.resourcesPath
+  return path.join(app.getAppPath(), 'assets');
+});
 
 function createWindow() {
   // Recupera lo stato precedente della finestra o imposta i default
