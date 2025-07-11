@@ -70,7 +70,7 @@ function App() {
         <div className="flex-1 flex items-center justify-start transition-all duration-300">
           <Sidebar selectedType={showSettings ? 'settings' : scrapingType} onChangeType={handleChangeType} onOpenSettings={handleOpenSettings}
           />
-          <main className="w-full max-w-5xl p-16 mx-auto h-full ">
+          <main className="w-full sm:max-w-3xl max-w-5xl xl:max-w-7xl p-16 mx-auto h-full ">
             {showSettings ? <SettingsPage onBack={handleCloseSettings} /> : formComponent}
           </main>
         </div>

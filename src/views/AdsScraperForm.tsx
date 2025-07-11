@@ -3,7 +3,7 @@ import Footer from '../components/Footer';
 import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
-import AdsDashboard from './AdsDashboard';
+import Dashboard from './Dashboard';
 import Buttons from '../components/Buttons';
 
 function AdsScraperForm({ viewMode = 'scraping' }) {
@@ -21,6 +21,8 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
   const [metaPageId, setMetaPageId] = useState(() => localStorage.getItem('metaads_pageId') || '');
   // Google Service Account Key File Path, persisted in localStorage
   const [googleKeyFilePath, setGoogleKeyFilePath] = useState(() => localStorage.getItem('googleads_keyFilePath') || '');
+  // Google Project ID, persisted in localStorage
+  const [googleProjectId, setGoogleProjectId] = useState(() => localStorage.getItem('googleads_projectId') || '');
   // Local state for advertiser name
   const [advertiser, setAdvertiser] = useState(() => localStorage.getItem('googleads_advertiser') || '');
 
@@ -39,6 +41,9 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
   useEffect(() => {
     localStorage.setItem('googleads_keyFilePath', googleKeyFilePath);
   }, [googleKeyFilePath]);
+  useEffect(() => {
+    localStorage.setItem('googleads_projectId', googleProjectId);
+  }, [googleProjectId]);
   useEffect(() => {
     localStorage.setItem('googleads_advertiser', advertiser);
   }, [advertiser]);
@@ -108,7 +113,8 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
           headless,
           useProxy,
           customProxy,
-          googleKeyFilePath // Only pass the key file path
+          googleKeyFilePath, // Only pass the key file path
+          googleProjectId // Pass project ID
         );
       } else if (adType === 'meta') {
         window.electron.startScraping(
@@ -187,6 +193,19 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
                   value={advertiser}
                   onChange={(e) => setAdvertiser(e.target.value)}
                   placeholder="Nome inserzionista"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm mb-1" htmlFor="google-projectid-input">
+                  Google Project ID
+                </label>
+                <input
+                  id="google-projectid-input"
+                  type="text"
+                  className="input w-full px-3 py-2 border rounded text-black"
+                  value={googleProjectId}
+                  onChange={(e) => setGoogleProjectId(e.target.value)}
+                  placeholder="Google Cloud Project ID"
                 />
               </div>
               <div className="mb-4">
@@ -286,7 +305,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (
-            <AdsDashboard data={Array.isArray(selectedPage) ? selectedPage : [selectedPage]} />
+            <Dashboard data={Array.isArray(selectedPage) ? selectedPage : [selectedPage]} />
           )}
         </section>
       )}

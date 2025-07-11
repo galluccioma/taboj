@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Footer from '../components/Footer';
-import MapsDashboard from './MapsDashboard';
+import Dashboard from './Dashboard';
 import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
@@ -178,7 +178,7 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (
-            <MapsDashboard data={selectedPage} />
+            <Dashboard data={selectedPage} />
           )}
         </section>
       )}

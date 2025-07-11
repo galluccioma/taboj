@@ -158,8 +158,8 @@ async function performScraping(
       await performBackupSite(searchString, folderPath, win, headless);
     }
   } else if (scrapingType === 'googleads') {
-    const { headless, useProxy, customProxy, googleKeyFilePath } = options;
-    await performGoogleAdsScraping(searchString, folderPath, win, headless, useProxy, customProxy, googleKeyFilePath);
+    const { headless, useProxy, customProxy, googleKeyFilePath, projectId } = options;
+    await performGoogleAdsScraping(searchString, folderPath, win, headless, useProxy, customProxy, googleKeyFilePath, projectId);
   } else if (scrapingType === 'metaads') {
     const { headless, useProxy, customProxy, metaAdsAccessToken } = options;
     await performMetaAdsScraping(searchString, folderPath, win, headless, useProxy, customProxy, metaAdsAccessToken);
@@ -189,8 +189,8 @@ ipcMain.handle(
       const [searchString, , folderPath, headless, useProxy, customProxy, fullBackup, downloadMedia] = args;
       await performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, fullBackup, downloadMedia });
     } else if (scrapingType === 'googleads') {
-      const [advertiser, , folderPath, headless, useProxy, customProxy, googleKeyFilePath] = args;
-      await performScraping(advertiser, scrapingType, folderPath, win, { headless, useProxy, customProxy, googleKeyFilePath });
+      const [advertiser, , folderPath, headless, useProxy, customProxy, googleKeyFilePath, projectId] = args;
+      await performScraping(advertiser, scrapingType, folderPath, win, { headless, useProxy, customProxy, googleKeyFilePath, projectId });
     } else if (scrapingType === 'metaads') {
       const [searchString, , folderPath, headless, useProxy, customProxy, metaAdsAccessToken] = args;
       await performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, metaAdsAccessToken });

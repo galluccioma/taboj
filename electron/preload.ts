@@ -198,6 +198,7 @@ const api = {
   },
   // Overload for DNS/maps/faq
   startScraping: (...args: any[]) => {
+    // For Google Ads: (..., googleKeyFilePath, projectId)
     ipcRenderer.invoke('start-scraping', ...args);
   },
   // For backup

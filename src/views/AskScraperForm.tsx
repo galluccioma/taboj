@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Footer from '../components/Footer';
-import AskDashboard from './AskDashboard';
+import Dashboard from './Dashboard';
 import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
@@ -243,7 +243,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (
-            <AskDashboard data={selectedPage} />
+            <Dashboard data={selectedPage} />
           )}
         </section>
       )}

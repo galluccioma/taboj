@@ -5,9 +5,13 @@ import fs from 'fs';
 import path from 'path';
 
 // Only support service account key file authentication
-async function performGoogleAdsScraping(advertiser, folderPath, win, headless, useProxy, customProxy, keyFilePath) {
+async function performGoogleAdsScraping(advertiser, folderPath, win, headless, useProxy, customProxy, keyFilePath, projectId) {
   if (!keyFilePath || !fs.existsSync(keyFilePath)) {
     if (win && win.webContents) win.webContents.send('status', `❌ Service account key file required: ${keyFilePath}`);
+    return;
+  }
+  if (!projectId) {
+    if (win && win.webContents) win.webContents.send('status', `❌ Google Project ID richiesto.`);
     return;
   }
 
@@ -18,8 +22,6 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
     if (win && win.webContents) win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);
   }
   if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
-
-  const projectId = "sonic-ivy-465507-t8";
 
   // Use service account key file for authentication
   const auth = new GoogleAuth({

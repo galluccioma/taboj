@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Footer from '../components/Footer';
-import DnsDashboard from './DnsDashboard';
+import Dashboard from './Dashboard';
 import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
@@ -246,7 +246,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (
-            <DnsDashboard data={selectedPage} />
+            <Dashboard data={selectedPage} />
           )}
         </section>
       )}
