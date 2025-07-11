@@ -27,7 +27,7 @@ function BackupFolderList({ folders, onView, onDelete, onOpen, loading }: any) {
                 Vedi
               </button>
               <button
-                className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded bg-yellow-700 hover:bg-yellow-800"
+                className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
                 onClick={() => onOpen(folder.folderPath)}
               >
                 Apri cartella

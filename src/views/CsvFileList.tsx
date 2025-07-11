@@ -22,7 +22,7 @@ const CsvFileList: React.FC<CsvFileListProps> = ({ files, onView, onDelete, load
               Vedi
             </button>
             <button
-              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded bg-yellow-700 hover:bg-yellow-800"
+              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
               onClick={async () => {
                 const folderPath = file.substring(0, file.lastIndexOf('/'));
                 if (window.electron && window.electron.invoke && folderPath) {

@@ -161,7 +161,7 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
         <section className="bg-slate-800 rounded shadow p-4 mt-6">
           <div className="flex justify-between items-center mb-4">
             <button
-              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded bg-yellow-700 hover:bg-yellow-800"
+              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
               onClick={() => setSelectedPage(null)}
             >
               Torna alla lista

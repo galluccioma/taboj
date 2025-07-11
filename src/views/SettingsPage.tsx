@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSettings } from '../components/SettingsContext';
+import { Notification } from 'electron';
 
 interface SettingsPageProps {
   onBack?: () => void;
@@ -41,7 +42,6 @@ function SettingsPage({ onBack }: SettingsPageProps) {
 
   const handleSave = async () => {
     setSaving(true);
-    alert("Cartella aggiornata con successo")
     setError('');
     try {
       if (window.electron && (window.electron as any).invoke) {
@@ -51,13 +51,14 @@ function SettingsPage({ onBack }: SettingsPageProps) {
       setError('Errore nel salvataggio della cartella.');
     }
     setSaving(false);
+    alert("Cartella aggiornata con successo")
   };
 
   return (
     <div className=" mx-auto p-8 mt-8 bg-slate-800 rounded shadow text-white">
       {onBack && (
         <button
-          className="mb-4 px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded bg-yellow-700 hover:bg-yellow-800"
+          className="mb-4 px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
           onClick={onBack}
         >
           Indietro
