@@ -101,6 +101,8 @@ async function performMetaAdsScraping(pageId, folderPath, win, headless, useProx
     });
     await csvWriter.writeRecords(csvData);
     if (win && win.webContents) win.webContents.send('status', `✅ File CSV salvato in: ${folderPath}`);
+    // Restituisce i dati estratti come array
+    return csvData;
   } catch (error) {
     if (win && win.webContents) win.webContents.send('status', `❌ Errore: ${error.message || error}`);
   }

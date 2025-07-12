@@ -11,7 +11,7 @@ const CsvFileList: React.FC<CsvFileListProps> = ({ files, onView, onDelete, load
   if (loading) return <div>Caricamento file...</div>;
   return (
     <ul className="divide-y divide-slate-600">
-      {files.map((file, idx) => (
+      {files.map((file) => (
         <li key={file} className="py-2 flex items-center justify-between">
           <span className="truncate max-w-xs">{file.split(/[\\/]/).pop() || file}</span>
           <div className="flex gap-2">

@@ -8,13 +8,14 @@ import { parse } from 'csv-parse/sync';
 // Packages
 import { BrowserWindow, app, ipcMain, IpcMainEvent, nativeTheme, dialog, shell } from 'electron';
 import isDev from 'electron-is-dev';
-import { stopFlag } from '../src/utils/config';
 import { performMapsScraping } from '../src/scrapers/mapsScraping.js';
 import { performDnsScraping } from '../src/scrapers/dnsScraping.js';
 import { performFaqScraping } from '../src/scrapers/askScraping.js';
 import { performBackupSite } from '../src/scrapers/backupSite.js';
 import performGoogleAdsScraping from '../src/scrapers/googleAds.js';
 import performMetaAdsScraping from '../src/scrapers/metaAds.js';
+import { InferenceClient } from "@huggingface/inference";
+import { stopFlag } from '../src/utils/config';
 
 ipcMain.handle('get-assets-path', () => {
   // In produzione potresti voler usare: process.resourcesPath
@@ -520,4 +521,95 @@ ipcMain.handle('open-backup-folder', async (_event, folderPath: string) => {
     return { success: true };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };  }
+});
+
+
+ipcMain.handle('analyze-csv', async (_event, { data, csvPath }) => {
+  try {
+    // Leggi impostazioni AI da file app_settings.json in userData
+    let aiToken = process.env.HF_TOKEN;
+    let aiModel = "meta-llama/Llama-3.2-3B-Instruct";
+    try {
+      const fsSettingsPath = path.join(app.getPath('userData'), 'app_settings.json');
+      if (fs.existsSync(fsSettingsPath)) {
+        const settingsRaw = fs.readFileSync(fsSettingsPath, 'utf8');
+        const settings = JSON.parse(settingsRaw);
+        if (settings.aiToken) aiToken = settings.aiToken;
+        if (settings.aiModel) aiModel = settings.aiModel;
+      }
+    } catch (e) { /* fallback ai valori di default */ }
+
+    if (!aiToken) {
+      return { success: false, error: "Token AI mancante. Inseriscilo nelle impostazioni." };
+    }
+
+    const client = new InferenceClient(aiToken);
+    // Prepara prompt per l'analisi
+    const preview = Array.isArray(data) ? data.slice(0, 10) : data;
+    const prompt = `Analizza i seguenti dati CSV e fornisci un riassunto, insight e anomalie se presenti. Rispondi in italiano.\nEsempio dati:\n${JSON.stringify(preview, null, 2)}\n(Nota: i dati completi sono più estesi)`;
+
+    const chatCompletion = await client.chatCompletion({
+      provider: "novita",
+      model: aiModel,
+      messages: [
+        { role: "user", content: prompt }
+      ]
+    });
+    const analysis = chatCompletion.choices[0].message.content;
+    if (typeof analysis !== 'string') {
+      throw new Error('Risposta AI non valida o vuota.');
+    }
+    // Salva il risultato nella stessa cartella del CSV, con stesso nome ma .txt
+    let folder = csvPath ? path.dirname(csvPath) : app.getPath('documents');
+    let baseName = csvPath ? path.basename(csvPath, path.extname(csvPath)) : 'ai_analysis';
+    let outPath = path.join(folder, baseName + '.txt');
+    fs.writeFileSync(outPath, analysis, 'utf8');
+    return { success: true, path: outPath };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
+// Handler per controllare se il file AI esiste
+ipcMain.handle('check-ai-analysis-file', async (_event, { aiFilePath }) => {
+  try {
+    return fs.existsSync(aiFilePath);
+  } catch {
+    return false;
+  }
+});
+
+ipcMain.handle('open-ai-analysis-file', async (_event, { csvPath }) => {
+  try {
+    let folder = csvPath ? path.dirname(csvPath) : app.getPath('documents');
+    let baseName = csvPath ? path.basename(csvPath, path.extname(csvPath)) : 'ai_analysis';
+    let outPath = path.join(folder, baseName + '.txt');
+    if (!fs.existsSync(outPath)) throw new Error('File non trovato');
+    await shell.openPath(outPath);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
+ipcMain.handle('delete-ai-analysis-file', async (_event, { csvPath }) => {
+  try {
+    let folder = csvPath ? path.dirname(csvPath) : app.getPath('documents');
+    let baseName = csvPath ? path.basename(csvPath, path.extname(csvPath)) : 'ai_analysis';
+    let outPath = path.join(folder, baseName + '.txt');
+    if (fs.existsSync(outPath)) fs.unlinkSync(outPath);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+});
+
+ipcMain.handle('save-app-settings', async (_event, settings) => {
+  try {
+    const fsSettingsPath = path.join(app.getPath('userData'), 'app_settings.json');
+    fs.writeFileSync(fsSettingsPath, JSON.stringify(settings, null, 2), 'utf8');
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
 });

@@ -9,12 +9,24 @@ interface SettingsContextProps {
   setHeadless: (value: boolean) => void;
   metaAdsAccessToken: string;
   setMetaAdsAccessToken: (value: string) => void;
+  aiToken: string;
+  setAiToken: (value: string) => void;
+  aiModel: string;
+  setAiModel: (value: string) => void;
+  googleServiceAccountKeyPath: string;
+  setGoogleServiceAccountKeyPath: (value: string) => void;
+  googleProjectId: string;
+  setGoogleProjectId: (value: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextProps | undefined>(undefined);
 
 const SETTINGS_KEY = 'app_settings';
 const DEFAULT_META_ADS_ACCESS_TOKEN = '';
+const DEFAULT_AI_TOKEN = '';
+const DEFAULT_AI_MODEL = '';
+const DEFAULT_GOOGLE_SERVICE_ACCOUNT_KEY_PATH = '';
+const DEFAULT_GOOGLE_PROJECT_ID = '';
 
 function getInitialSettings() {
   if (typeof window !== 'undefined') {
@@ -23,7 +35,7 @@ function getInitialSettings() {
       try {
         return JSON.parse(saved);
       } catch {
-        // Ignore JSON parse errors and use default settings
+        // Ignora errori di parsing JSON e usa i valori di default
       }
     }
   }
@@ -32,21 +44,41 @@ function getInitialSettings() {
     customProxy: '',
     headless: true,
     metaAdsAccessToken: DEFAULT_META_ADS_ACCESS_TOKEN,
+    aiToken: DEFAULT_AI_TOKEN,
+    aiModel: DEFAULT_AI_MODEL,
+    googleServiceAccountKeyPath: DEFAULT_GOOGLE_SERVICE_ACCOUNT_KEY_PATH,
+    googleProjectId: DEFAULT_GOOGLE_PROJECT_ID,
   };
 }
 
+// Provider del contesto impostazioni
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [useProxy, setUseProxy] = useState<boolean>(getInitialSettings().useProxy);
-  const [customProxy, setCustomProxy] = useState<string>(getInitialSettings().customProxy);
-  const [headless, setHeadless] = useState<boolean>(getInitialSettings().headless);
-  const [metaAdsAccessToken, setMetaAdsAccessToken] = useState<string>(getInitialSettings().metaAdsAccessToken || DEFAULT_META_ADS_ACCESS_TOKEN);
+  const initial = getInitialSettings();
+  const [useProxy, setUseProxy] = useState<boolean>(initial.useProxy);
+  const [customProxy, setCustomProxy] = useState<string>(initial.customProxy);
+  const [headless, setHeadless] = useState<boolean>(initial.headless);
+  const [metaAdsAccessToken, setMetaAdsAccessToken] = useState<string>(initial.metaAdsAccessToken || DEFAULT_META_ADS_ACCESS_TOKEN);
+  const [aiToken, setAiToken] = useState<string>(initial.aiToken || DEFAULT_AI_TOKEN);
+  const [aiModel, setAiModel] = useState<string>(initial.aiModel || DEFAULT_AI_MODEL);
+  const [googleServiceAccountKeyPath, setGoogleServiceAccountKeyPath] = useState<string>(initial.googleServiceAccountKeyPath || DEFAULT_GOOGLE_SERVICE_ACCOUNT_KEY_PATH);
+  const [googleProjectId, setGoogleProjectId] = useState<string>(initial.googleProjectId || DEFAULT_GOOGLE_PROJECT_ID);
 
+  // Salva le impostazioni su localStorage ad ogni modifica
   useEffect(() => {
     localStorage.setItem(
       SETTINGS_KEY,
-      JSON.stringify({ useProxy, customProxy, headless, metaAdsAccessToken })
+      JSON.stringify({
+        useProxy,
+        customProxy,
+        headless,
+        metaAdsAccessToken,
+        aiToken,
+        aiModel,
+        googleServiceAccountKeyPath,
+        googleProjectId,
+      })
     );
-  }, [useProxy, customProxy, headless, metaAdsAccessToken]);
+  }, [useProxy, customProxy, headless, metaAdsAccessToken, aiToken, aiModel, googleServiceAccountKeyPath, googleProjectId]);
 
   const contextValue = React.useMemo(
     () => ({
@@ -58,8 +90,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setHeadless,
       metaAdsAccessToken,
       setMetaAdsAccessToken,
+      aiToken,
+      setAiToken,
+      aiModel,
+      setAiModel,
+      googleServiceAccountKeyPath,
+      setGoogleServiceAccountKeyPath,
+      googleProjectId,
+      setGoogleProjectId,
     }),
-    [useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless, metaAdsAccessToken, setMetaAdsAccessToken]
+    [useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless, metaAdsAccessToken, setMetaAdsAccessToken, aiToken, setAiToken, aiModel, setAiModel, googleServiceAccountKeyPath, setGoogleServiceAccountKeyPath, googleProjectId, setGoogleProjectId]
   );
 
   return (

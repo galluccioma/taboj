@@ -15,13 +15,14 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
     return;
   }
 
+  let outputFolder = folderPath;
   // Use base output folder if none provided
-  if (!folderPath) {
+  if (!outputFolder) {
     const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : process.cwd());
-    folderPath = path.join(baseOutput, 'googleads');
-    if (win && win.webContents) win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);
+    outputFolder = path.join(baseOutput, 'googleads');
+    if (win && win.webContents) win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${outputFolder}`);
   }
-  if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
+  if (!fs.existsSync(outputFolder)) fs.mkdirSync(outputFolder, { recursive: true });
 
   // Use service account key file for authentication
   const auth = new GoogleAuth({
@@ -53,21 +54,10 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
     const rows = result.data.rows || [];
     const simplifiedData = rows.map((row) => {
       const values = row.f.map((item) => item.v);
-
-      const advertiserId = values[0];
-      const creativeId = values[1];
-      const creativePageUrl = values[2];
-      const adFormatType = values[3];
-      const advertiserDisclosedName = values[4];
-      const advertiserLegalName = values[5];
-      const advertiserLocation = values[6];
-      const advertiserVerificationStatus = values[7];
-
-      const regionStats = values[8];
-      let surfaces = [];
+      const [advertiserId, creativeId, creativePageUrl, adFormatType, advertiserDisclosedName, advertiserLegalName, advertiserLocation, advertiserVerificationStatus, regionStats, audienceInfo, topic, isGoogleGrant] = values;
+      const surfaces = [];
       let ultimaDataFine = "";
       let campagnaAttiva = false;
-
       try {
         if (Array.isArray(regionStats)) {
           regionStats.forEach((region) => {
@@ -86,7 +76,6 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
       }
 
       // Estraggo i criteri di targeting dettagliati in colonne separate
-      const audienceInfo = values[9];
       const targetingValues = audienceInfo?.f?.map((entry) => entry.v) || [];
 
       const targetingCategories = [
@@ -101,9 +90,6 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
       targetingCategories.forEach((cat, idx) => {
         targetingMap[cat] = targetingValues[idx] || "N/D";
       });
-
-      const topic = values[10] || "N/D";
-      const isGoogleGrant = values[11] === "true" ? "Sì" : "No";
 
       return {
         "ID Inserzionista": advertiserId,
@@ -123,7 +109,7 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
       };
     });
     const csvWriter = createObjectCsvWriter({
-      path: path.join(folderPath, `google_ads-${advertiser}-${Date.now()}.csv`),
+      path: path.join(outputFolder, `google_ads-${advertiser}-${Date.now()}.csv`),
       header: [
         { id: "Campagna Attiva", title: "Campagna Attiva" },
         { id: "ID Inserzionista", title: "ID Inserzionista" },
@@ -146,7 +132,9 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
       ],
     });
     await csvWriter.writeRecords(simplifiedData);
-    if (win && win.webContents) win.webContents.send('status', `✅ File CSV salvato in: ${folderPath}`);
+    if (win && win.webContents) win.webContents.send('status', `✅ File CSV salvato in: ${outputFolder}`);
+    // Restituisce i dati estratti come array
+    return simplifiedData;
   } catch (error) {
     if (win && win.webContents) {
       let details = error.message;

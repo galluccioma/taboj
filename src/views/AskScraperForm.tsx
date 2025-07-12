@@ -17,6 +17,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
   const [selectedPage, setSelectedPage] = useState<any | null>(null);
   const [backupPages, setBackupPages] = useState<any[]>([]);
   const [showRaw, setShowRaw] = useState(false);
+  const [currentCsvPath, setCurrentCsvPath] = useState<string>('');
   const [maxToProcess, setMaxToProcess] = useState(() => {
     const val = localStorage.getItem('ask_maxToProcess');
     return val ? Number(val) : 50;
@@ -149,6 +150,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
       const data = await (window.electron as any).invoke('read-faq-csv', file);
       setBackupPages(data);
       setSelectedPage(data);
+      setCurrentCsvPath(file);
     }
   };
 
@@ -243,7 +245,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (
-            <Dashboard data={selectedPage} />
+            <Dashboard data={selectedPage} csvPath={currentCsvPath} />
           )}
         </section>
       )}

@@ -17,6 +17,7 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
   const [selectedPage, setSelectedPage] = useState<any | null>(null);
   const [backupPages, setBackupPages] = useState<any[]>([]);
   const [showRaw, setShowRaw] = useState(false);
+  const [currentCsvPath, setCurrentCsvPath] = useState<string>('');
   const { useProxy, customProxy, headless } = useSettings();
 
   useEffect(() => {
@@ -116,6 +117,7 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
       const data = await (window.electron as any).invoke('read-maps-csv', file);
       setBackupPages(data);
       setSelectedPage(data);
+      setCurrentCsvPath(file);
     }
   };
 
@@ -178,7 +180,7 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (
-            <Dashboard data={selectedPage} />
+            <Dashboard data={selectedPage} csvPath={currentCsvPath} />
           )}
         </section>
       )}

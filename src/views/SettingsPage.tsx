@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useSettings } from '../components/SettingsContext';
-import { Notification } from 'electron';
 
 interface SettingsPageProps {
   onBack?: () => void;
@@ -10,8 +9,12 @@ function SettingsPage({ onBack }: SettingsPageProps) {
   const [outputFolder, setOutputFolder] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [aiToken, setAiToken] = useState('');
+  const [aiModel, setAiModel] = useState('meta-llama/Llama-3.2-3B-Instruct');
+  const { googleServiceAccountKeyPath, setGoogleServiceAccountKeyPath, googleProjectId, setGoogleProjectId } = useSettings();
+  const { metaAdsAccessToken, setMetaAdsAccessToken } = useSettings();
 
-  const { useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless, googleAdsAdvertiser, setGoogleAdsAdvertiser, googleAdsClientId, setGoogleAdsClientId, googleAdsClientSecret, setGoogleAdsClientSecret, googleAdsRedirectUri, setGoogleAdsRedirectUri } = useSettings();
+  const { useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless } = useSettings();
 
   useEffect(() => {
     // Fetch current output folder from backend
@@ -26,6 +29,9 @@ function SettingsPage({ onBack }: SettingsPageProps) {
         setError('Errore nel recupero della cartella.');
       }
     })();
+    // Carica AI settings da localStorage
+    setAiToken(localStorage.getItem('aiToken') || '');
+    setAiModel(localStorage.getItem('aiModel') || 'meta-llama/Llama-3.2-3B-Instruct');
   }, []);
 
   const handleChooseFolder = async () => {
@@ -47,11 +53,38 @@ function SettingsPage({ onBack }: SettingsPageProps) {
       if (window.electron && (window.electron as any).invoke) {
         await (window.electron as any).invoke('set-base-output-folder', outputFolder);
       }
+      // Salva AI settings e chiavi in localStorage
+      localStorage.setItem('aiToken', aiToken);
+      localStorage.setItem('aiModel', aiModel);
+      // Salva anche su app_settings.json tramite IPC
+      if (window.electron && (window.electron as any).invoke) {
+        try {
+          await (window.electron as any).invoke('save-app-settings', {
+            aiToken,
+            aiModel,
+            // puoi aggiungere qui altre impostazioni se vuoi
+          });
+        } catch (e) {
+          // Se fallisce, fallback su localStorage (già fatto sopra)
+          console.warn('Salvataggio su file fallito, fallback su localStorage', e);
+        }
+      }
     } catch (e) {
       setError('Errore nel salvataggio della cartella.');
     }
     setSaving(false);
-    alert("Cartella aggiornata con successo")
+    alert("Cartella aggiornata con successo");
+  };
+
+  // Selettore file per Google Service Account Key
+  const handleChooseGoogleKeyFile = async () => {
+    if (window.electron && (window.electron as any).invoke) {
+      const filePath = await (window.electron as any).invoke('choose-file', { filters: [{ name: 'JSON', extensions: ['json'] }] });
+      if (filePath) setGoogleServiceAccountKeyPath(filePath);
+    } else if (window.electron && window.electron.chooseFolder) {
+      const path = await window.electron.chooseFolder();
+      if (path) setGoogleServiceAccountKeyPath(path);
+    }
   };
 
   return (
@@ -123,6 +156,66 @@ function SettingsPage({ onBack }: SettingsPageProps) {
           />
           <span>Rimuovi la spunta solo in caso di problemi</span>
         </div>
+      </div>
+      <div className="mb-4">
+        <span className="block mb-2 font-semibold">Token HuggingFace AI</span>
+        <input
+          type="text"
+          className="input w-full px-3 py-2 border rounded text-black"
+          value={aiToken}
+          onChange={e => setAiToken(e.target.value)}
+          placeholder="hf_..."
+        />
+      </div>
+      <div className="mb-4">
+        <span className="block mb-2 font-semibold">Modello AI</span>
+        <input
+          type="text"
+          className="input w-full px-3 py-2 border rounded text-black"
+          value={aiModel}
+          onChange={e => setAiModel(e.target.value)}
+          placeholder="meta-llama/Llama-3.2-3B-Instruct"
+        />
+      </div>
+      <div className="mb-4">
+        <span className="block mb-2 font-semibold">Percorso file chiave Google Service Account (JSON)</span>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            className="input flex-1 px-3 py-2 border rounded text-black"
+            value={googleServiceAccountKeyPath}
+            onChange={e => setGoogleServiceAccountKeyPath(e.target.value)}
+            placeholder="/percorso/file/chiave.json"
+            readOnly
+          />
+          <button
+            className="btn px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
+            onClick={handleChooseGoogleKeyFile}
+            type="button"
+          >
+            Scegli File
+          </button>
+        </div>
+      </div>
+      <div className="mb-4">
+        <span className="block mb-2 font-semibold">Google Project ID</span>
+        <input
+          type="text"
+          className="input w-full px-3 py-2 border rounded text-black"
+          value={googleProjectId}
+          onChange={e => setGoogleProjectId(e.target.value)}
+          placeholder="Google Cloud Project ID"
+        />
+      </div>
+      <div className="mb-4">
+        <span className="block mb-2 font-semibold">Meta API Key</span>
+        <input
+          type="text"
+          className="input w-full px-3 py-2 border rounded text-black"
+          value={metaAdsAccessToken}
+          onChange={e => setMetaAdsAccessToken(e.target.value)}
+          placeholder="Meta API Key"
+        />
       </div>
       <button
         className="btn px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"

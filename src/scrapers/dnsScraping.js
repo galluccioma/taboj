@@ -1,7 +1,6 @@
 import converter from 'json-2-csv';
 import fs from 'fs';
 import path from 'path';
-import * as dns from 'dns/promises';
 import axios from 'axios';
 import { execFile } from 'child_process';
 import { stopFlag } from '../utils/config';
@@ -129,24 +128,12 @@ export async function performDnsScraping(
   doLighthouse,
   doWayback
 ) {
-  // Use base output folder if none provided
-  if (!folderPath) {
+  let outputFolder = folderPath;
+  if (!outputFolder) {
     const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output'));
-    folderPath = path.join(baseOutput, 'dns');
-    win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);  }
-  // Defensive: ensure dnsRecordTypes is always an array
-  if (!Array.isArray(dnsRecordTypes)) {
-    if (typeof dnsRecordTypes === 'string') {
-      dnsRecordTypes = dnsRecordTypes.split(',').map(s => s.trim()).filter(Boolean);
-    } else {
-      dnsRecordTypes = [];
-    }
+    outputFolder = path.join(baseOutput, 'dns');
+    win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${outputFolder}`);
   }
-
-  // Debug: log dnsRecordTypes
-  console.log('==== DNS SCRAPING START ====');
-  console.log('[DEBUG] dnsRecordTypes:', dnsRecordTypes);
-  console.log('[DEBUG] doAMail:', doAMail, 'doLighthouse:', doLighthouse, 'doWayback:', doWayback);
 
   win.webContents.send('reset-logs');
   stopFlag.value = false;
@@ -166,57 +153,8 @@ export async function performDnsScraping(
         return;
       }
 
-      // Debug: log domain being processed
-      console.log('==== Processing domain:', domain, '====');
-
-      win.webContents.send('status', `\n🔍 Controllo DNS per: ${domain}`);
+      win.webContents.send('status', `\n🔍 Analisi DNS/Lighthouse/Wayback per: ${domain}`);
       const record = { domain };
-
-      // Pre-populate DNS record types
-      dnsRecordTypes.forEach(type => {
-        record[type] = null;
-      });
-
-      // Pre-populate mail_A if needed
-      if (doAMail) {
-        record.mail_A = null;
-      }
-
-      // Pre-populate Lighthouse fields if needed
-      if (doLighthouse) {
-        record.performance = null;
-        record.accessibility = null;
-        record.seo = null;
-        record.bestPractices = null;
-        record.lighthouse_average = null;
-      }
-
-      // Pre-populate Wayback fields if needed
-      if (doWayback) {
-        record.wayback_snapshots = null;
-        record.wayback_first_date = null;
-        record.wayback_last_date = null;
-        record.wayback_years_online = null;
-      }
-
-      // DNS Record Lookup
-      await Promise.all(
-        dnsRecordTypes.map(async (type) => {
-          if (stopFlag.value) return;
-          console.log(`[DEBUG] Starting DNS lookup for type: ${type} on domain: ${domain}`);
-          try {
-            const result = await dns.resolve(domain, type);
-            record[type] = JSON.stringify(result);
-            win.webContents.send('status', `[success] ${type} trovato per ${domain}: ${JSON.stringify(result)}`);
-            console.log(`[DEBUG] DNS result for ${type} on ${domain}:`, result);
-          } catch (e) {
-            record[type] = null;
-            win.webContents.send('status', `[info] Nessun record ${type} per ${domain} (${e.code || e.message})`);
-            // Debug: log DNS lookup error
-            console.error(`[ERROR] Error resolving ${type} for ${domain}:`, e);
-          }
-        })
-      );
 
       // HTTP Status and SSL Status
       try {
@@ -224,8 +162,8 @@ export async function performDnsScraping(
         let httpStatus = null;
         let sslStatus = 'NO SSL';
         try {
-          const response = await axios.get(httpsUrl, { timeout: 10000, validateStatus: () => true });
-          httpStatus = response.status;
+          const { status } = await axios.get(httpsUrl, { timeout: 10000, validateStatus: () => true });
+          httpStatus = status;
           sslStatus = 'VALID';
         } catch (err) {
           if (err.response) {
@@ -239,50 +177,33 @@ export async function performDnsScraping(
         }
         record.http_status = httpStatus;
         record.ssl_status = sslStatus;
+        win.webContents.send('status', `[success] HTTP Status: ${httpStatus}, SSL Status: ${sslStatus}`);
       } catch (err) {
         record.http_status = 'ERROR';
         record.ssl_status = 'ERROR';
-      }
-
-      // A record per mail.domain se richiesto
-      if (doAMail) {
-        const mailDomain = `mail.${domain}`;
-        console.log(`[DEBUG] Starting DNS lookup for mail_A on: ${mailDomain}`);
-        try {
-          const mailA = await dns.resolve(mailDomain, 'A');
-          record.mail_A = JSON.stringify(mailA);
-          win.webContents.send('status', `[success] A record trovato per ${mailDomain}: ${JSON.stringify(mailA)}`);
-          console.log(`[DEBUG] DNS result for mail_A on ${mailDomain}:`, mailA);
-        } catch (e) {
-          record.mail_A = null;
-          win.webContents.send('status', `[info] Nessun A record per ${mailDomain} (${e.code || e.message})`);
-          // Debug: log mail_A lookup error
-          console.error(`[ERROR] Error resolving mail_A for ${mailDomain}:`, e);
-        }
+        win.webContents.send('status', `[error] HTTP/SSL fallito per ${domain}: ${err.message}`);
       }
 
       // Wayback se richiesto
       if (doWayback) {
-        console.log(`[DEBUG] Starting Wayback lookup for: ${domain}`);
+        win.webContents.send('status', `[wayback] Avvio ricerca Wayback Machine per: ${domain}`);
         try {
           const waybackResult = await getWaybackData(`https://${domain}`, win);
           record.wayback_snapshots = waybackResult.total;
           record.wayback_first_date = waybackResult.firstDate;
           record.wayback_last_date = waybackResult.lastDate;
           record.wayback_years_online = waybackResult.yearsOnline;
-          console.log('[DEBUG] Wayback result:', waybackResult);
+          win.webContents.send('status', `[success] Wayback: ${waybackResult.total} snapshot, ${waybackResult.yearsOnline} anni online`);
         } catch (err) {
           win.webContents.send('status', `[error] Wayback fallito per ${domain}: ${err.message}`);
-          // Debug: log Wayback error
-          console.error(`[ERROR] Error running Wayback for ${domain}:`, err);
         }
       }
 
       // Lighthouse se richiesto
       if (doLighthouse) {
+        win.webContents.send('status', `[lighthouse] Avvio analisi Lighthouse per: ${domain}`);
         if (process.env.NODE_ENV === 'production') {
           win.webContents.send('status', '[info] Lighthouse skipped in production build.');
-          console.log('[INFO] Lighthouse skipped in production build.');
         } else {
           try {
             const lighthouseResult = await runLighthouseAudit(`https://${domain}`, win);
@@ -292,31 +213,23 @@ export async function performDnsScraping(
               record.seo = lighthouseResult.seo;
               record.bestPractices = lighthouseResult.bestPractices;
               record.lighthouse_average = lighthouseResult.average;
-              console.log('[DEBUG] Lighthouse result:', lighthouseResult);
+              win.webContents.send('status', `[success] Lighthouse: Performance ${lighthouseResult.performance}, Accessibilità ${lighthouseResult.accessibility}, SEO ${lighthouseResult.seo}, Best Practices ${lighthouseResult.bestPractices}, Media ${lighthouseResult.average}`);
             } else {
-              console.log('[WARN] Lighthouse returned null for', domain);
+              win.webContents.send('status', `[warn] Lighthouse non ha restituito risultati per ${domain}`);
             }
           } catch (err) {
             win.webContents.send('status', `[error] Lighthouse fallito per ${domain}: ${err.message}`);
-            // Debug: log Lighthouse error
-            console.error(`[ERROR] Error running Lighthouse for ${domain}:`, err);
           }
         }
       }
-
-      // Debug: log final record before pushing
-      console.log('==== Final record for', domain, '====');
-      console.log(record);
 
       allData.push(record);
     })
   );
 
-  if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
+  if (!fs.existsSync(outputFolder)) fs.mkdirSync(outputFolder, { recursive: true });
 
-  // Debug: log allData before saving
-  console.log('==== All data to be saved to CSV ====');
-  console.log(allData);
-
-  await saveDnsData(allData, startTime, folderPath, win, dnsRecordTypes, doAMail, searchString);
+  await saveDnsData(allData, startTime, outputFolder, win, [], false, searchString);
+  // Restituisce i dati raccolti come array
+  return allData;
 }

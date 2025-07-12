@@ -15,21 +15,22 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedPage, setSelectedPage] = useState<any | null>(null);
   const [showRaw, setShowRaw] = useState(false);
-  const { useProxy, customProxy, headless, metaAdsAccessToken, setMetaAdsAccessToken } = useSettings();
+  const [currentCsvPath, setCurrentCsvPath] = useState<string>('');
+  const { useProxy, customProxy, headless, metaAdsAccessToken, setMetaAdsAccessToken, googleServiceAccountKeyPath, setGoogleServiceAccountKeyPath, googleProjectId, setGoogleProjectId } = useSettings();
   const [adType, setAdType] = useState<'google' | 'meta'>('google');
   // Meta Page ID state, persisted in localStorage
   const [metaPageId, setMetaPageId] = useState(() => localStorage.getItem('metaads_pageId') || '');
-  // Google Service Account Key File Path, persisted in localStorage
-  const [googleKeyFilePath, setGoogleKeyFilePath] = useState(() => localStorage.getItem('googleads_keyFilePath') || '');
-  // Google Project ID, persisted in localStorage
-  const [googleProjectId, setGoogleProjectId] = useState(() => localStorage.getItem('googleads_projectId') || '');
   // Local state for advertiser name
   const [advertiser, setAdvertiser] = useState(() => localStorage.getItem('googleads_advertiser') || '');
 
+  // Gestione scelta file Google Service Account (preferisci chooseFile per .json, fallback chooseFolder)
   const handleChooseKeyFile = async () => {
     if (window.electron && window.electron.chooseFile) {
       const filePath = await window.electron.chooseFile({ filters: [{ name: 'JSON', extensions: ['json'] }] });
-      if (filePath) setGoogleKeyFilePath(filePath);
+      if (filePath) setGoogleServiceAccountKeyPath(filePath);
+    } else if (window.electron && window.electron.chooseFolder) {
+      const path = await window.electron.chooseFolder();
+      if (path) setGoogleServiceAccountKeyPath(path);
     }
   };
 
@@ -38,12 +39,6 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
     localStorage.setItem('metaads_pageId', metaPageId);
   }, [metaPageId]);
 
-  useEffect(() => {
-    localStorage.setItem('googleads_keyFilePath', googleKeyFilePath);
-  }, [googleKeyFilePath]);
-  useEffect(() => {
-    localStorage.setItem('googleads_projectId', googleProjectId);
-  }, [googleProjectId]);
   useEffect(() => {
     localStorage.setItem('googleads_advertiser', advertiser);
   }, [advertiser]);
@@ -113,8 +108,8 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
           headless,
           useProxy,
           customProxy,
-          googleKeyFilePath, // Only pass the key file path
-          googleProjectId // Pass project ID
+          googleServiceAccountKeyPath, // dal context
+          googleProjectId // dal context
         );
       } else if (adType === 'meta') {
         window.electron.startScraping(
@@ -146,6 +141,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
     if (window.electron && (window.electron as any).invoke) {
       const data = await (window.electron as any).invoke('read-googleads-csv', file);
       setSelectedPage(data);
+      setCurrentCsvPath(file);
     }
   };
 
@@ -204,7 +200,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
                   type="text"
                   className="input w-full px-3 py-2 border rounded text-black"
                   value={googleProjectId}
-                  onChange={(e) => setGoogleProjectId(e.target.value)}
+                  onChange={e => setGoogleProjectId(e.target.value)}
                   placeholder="Google Cloud Project ID"
                 />
               </div>
@@ -217,7 +213,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
                     id="google-keyfile-input"
                     type="text"
                     className="input flex-1 px-3 py-2 border rounded text-black"
-                    value={googleKeyFilePath}
+                    value={googleServiceAccountKeyPath}
                     readOnly
                   />
                   <button
@@ -305,7 +301,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
               {JSON.stringify(selectedPage, null, 2)}
             </pre>
           ) : (
-            <Dashboard data={Array.isArray(selectedPage) ? selectedPage : [selectedPage]} />
+            <Dashboard data={Array.isArray(selectedPage) ? selectedPage : [selectedPage]} csvPath={currentCsvPath} />
           )}
         </section>
       )}

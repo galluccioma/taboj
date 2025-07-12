@@ -91,8 +91,9 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
           </button>
         </div>
 
-        {/* Navigation Business Analyzer */}
-        <nav className="flex flex-col gap-1 py-4 border-b border-white/20">
+         {/* Navigation Business Analyzer */}
+         <nav className="flex flex-col gap-1 py-4 border-b border-white/20">
+         
           <SidebarItem
             open={open}
             selected={selectedType === 'maps'}
@@ -114,6 +115,7 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
             label="Google Ads"
             onClick={() => onChangeType('googleads')}
           />
+       
         </nav>
         {/* Navigation Tecnici */}
          <nav className="flex flex-col gap-1 py-4 border-b border-white/20">
