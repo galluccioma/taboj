@@ -32,7 +32,7 @@ async function performMetaAdsScraping(pageId, folderPath, win, headless, useProx
       'page_name',
       'publisher_platforms'
     ].join(','),
-    limit: '100',
+    limit: '1000',
     search_page_ids: pageId
   });
 

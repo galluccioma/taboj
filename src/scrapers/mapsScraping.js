@@ -12,7 +12,8 @@ import { stopFlag, launchBrowser } from '../utils/config';
 puppeteer.use(StealthPlugin());
 stopFlag.value = false;
 
-export function extractMail(html) {
+// Funzione per estrarre la mail dal sito web
+function extractMail(html) {
   const $ = cheerio.load(html);
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g;
   let email = null;
@@ -28,7 +29,8 @@ export function extractMail(html) {
   return email;
 }
 
-export function extractPiva(html) {
+// Funzione per estrarre la partita iva dal sito
+function extractPiva(html) {
   const $ = cheerio.load(html);
   const pivaRegex = /\b\d{11}\b/g;
   let piva = null;
@@ -44,8 +46,9 @@ export function extractPiva(html) {
   return piva;
 }
 
-async function checkVat(piva) {
-  const cleanedPiva = piva.replace(/\D/g, '');
+// Funzione che chiama l'API checkVatService per verificare la correttezza della partita iva
+  async function checkVat(piva) {
+    const cleanedPiva = piva.replace(/\D/g, '');
   if (cleanedPiva.length !== 11) return null;
 
   const url = 'http://ec.europa.eu/taxation_customs/vies/services/checkVatService';
@@ -97,27 +100,72 @@ async function checkVat(piva) {
   }
 }
 
+// Funzione per estrarre il fatturato da ufficiocamerale.it tramite ricerca Google
+async function extractFatturato(pivaNumber, browser) {
+  try {
+    const searchPage = await browser.newPage();
+    await searchPage.goto(`https://www.google.com/search?q=${pivaNumber}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-export async function saveMapsData(data, startTime, folderPath, win, searchQueries) {
-  if (data.length === 0) {
-    win.webContents.send('status', '[!] Nessun dato da salvare.');
-    return;
+    // Accept cookies if present
+    const acceptBtn = await searchPage.$('button[aria-label="Accept all"], button[aria-label="Accetta tutto"], #L2AGLb');
+    if (acceptBtn) { 
+      try { 
+        await acceptBtn.click(); 
+      } catch (e) {
+        // Ignore click errors
+      } 
+    }
+    await new Promise(resolve => {
+      setTimeout(resolve, 2000);
+    });
+
+    // Try to find the ufficiocamerale.it link robustly
+    let ufficioLink = null;
+    // 1. Try to get from <a> tags
+    const links = await searchPage.$$eval('a', as => as.map(a => a.href));
+    ufficioLink = links.find(href => href.includes('ufficiocamerale.it') && href.match(/\d{11}/));
+    // 2. If not found, try to get from visible text
+    if (!ufficioLink) {
+      ufficioLink = await searchPage.$$eval('a', as => {
+        for (const a of as) {
+          if (a.innerText && a.innerText.includes('ufficiocamerale.it')) return a.href;
+        }
+        return null;
+      });
+    }
+    // 3. Fallback: construct the URL directly
+    if (!ufficioLink) {
+      ufficioLink = `https://www.ufficiocamerale.it/ricerca?partitaiva=${pivaNumber}`;
+    }
+
+    // Try to open the link and extract Fatturato
+    if (ufficioLink) {
+      await searchPage.goto(ufficioLink, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await new Promise(resolve => {
+        setTimeout(resolve, 2000);
+      });
+      const fatturato = await searchPage.$$eval('li.list-group-item', els => {
+        for (const el of els) {
+          const text = el.innerText;
+          if (text.includes('Fatturato:')) {
+            const match = text.match(/Fatturato:\s*€\s*([\d.,]+)/);
+            return match ? match[1] : null;
+          }
+        }
+        return null;
+      });
+      await searchPage.close();
+      return fatturato;
+    }
+    await searchPage.close();
+    return null;
+  } catch (e) {
+    // Return null on any error
+    return null;
   }
-  const csv = await converter.json2csv(data);
-  let queriesStr = searchQueries
-    .join('_')
-    .replace(/\s+/g, '_')
-    .replace(/[^a-zA-Z0-9_]/g, '');
-  if (queriesStr.length > 40) queriesStr = `${queriesStr.slice(0, 40)}...`;
-  const filename = `maps_output-${queriesStr}-${Date.now()}.csv`;
-  fs.writeFileSync(path.join(folderPath, filename), csv, 'utf-8');
-  win.webContents.send('status', `[+] Record salvati nel file CSV (${filename})`);
-  win.webContents.send(
-    'status',
-    `[success] Scritti ${data.length} record in ${(Date.now() - startTime.getTime()) / 1000}s`
-  );
 }
 
+// Funzione di Scraping schede Google Maps
 export async function scrapeGoogleMaps(searchString, browser, win) {
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const page = await browser.newPage();
@@ -171,6 +219,7 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
           let mail = null;
           let piva = null;
           let ragioneSociale = null;
+          let fatturato = null;
 
           if (website && website !== 'Nessun Sito') {
             try {
@@ -188,6 +237,11 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
                 } else {
                   win.webContents.send('status', `[!] Dati VIES non trovati per ${piva}`);
                 }
+                // --- New logic: Google search for P.IVA and extract Fatturato ---
+                fatturato = await extractFatturato(piva, browser);
+                win.webContents.send('status', `💸 scraping FATTURATO per P.IVA: ${piva}`);
+
+                // --- End new logic ---
               }
             } catch (_) {}
           }
@@ -202,6 +256,7 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
             mail,
             piva,
             ragioneSociale,
+            fatturato,
           });
           win.webContents.send('status', `[+] (${index + 1}/${cards.length}) ${name}`);
           await delay(1000);
@@ -228,6 +283,28 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
   return scrapeData;
 }
 
+// Funzione per salvare i risultati nel CSV
+export async function saveMapsData(data, startTime, folderPath, win, searchQueries) {
+  if (data.length === 0) {
+    win.webContents.send('status', '[!] Nessun dato da salvare.');
+    return;
+  }
+  const csv = await converter.json2csv(data);
+  let queriesStr = searchQueries
+    .join('_')
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_]/g, '');
+  if (queriesStr.length > 40) queriesStr = `${queriesStr.slice(0, 40)}...`;
+  const filename = `maps_output-${queriesStr}-${Date.now()}.csv`;
+  fs.writeFileSync(path.join(folderPath, filename), csv, 'utf-8');
+  win.webContents.send('status', `[+] Record salvati nel file CSV (${filename})`);
+  win.webContents.send(
+    'status',
+    `[success] Scritti ${data.length} record in ${(Date.now() - startTime.getTime()) / 1000}s`
+  );
+}
+
+// Funzione di Scraping che chiama le altre funzioni
 export async function performMapsScraping(searchString, folderPath, win, headless, useProxy, customProxy) {
   stopFlag.value = false; // Reset stop flag at the start
   // Use base output folder if none provided

@@ -1,6 +1,8 @@
 import * as lighthouse from 'lighthouse';
 import * as chromeLauncher from 'chrome-launcher';
 
+
+// Semplice runner per ottenere i valori di lighthouse
 const url = process.argv[2];
 if (!url) {
   console.error('No URL provided');

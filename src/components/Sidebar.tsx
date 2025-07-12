@@ -71,7 +71,7 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
         style={{ minHeight: '100vh' }}
       >
         {/* Header */}
-        <div className="flex flex-col items-start gap-2 px-4 py-4 border-b border-slate-700">
+        <div className="flex flex-col items-start gap-2 px-4 py-4 border-b border-slate-700/40">
           {/* Logo e Titolo */}
           <div className="flex">
             <img
@@ -91,8 +91,8 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 flex flex-col gap-1 mt-4">
+        {/* Navigation Business Analyzer */}
+        <nav className="flex flex-col gap-1 py-4 border-b border-white/20">
           <SidebarItem
             open={open}
             selected={selectedType === 'maps'}
@@ -109,6 +109,16 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
           />
           <SidebarItem
             open={open}
+            selected={selectedType === 'googleads'}
+            icon={<Tags className="w-5 h-5" />} // You may want to use a different icon
+            label="Google Ads"
+            onClick={() => onChangeType('googleads')}
+          />
+        </nav>
+        {/* Navigation Tecnici */}
+         <nav className="flex flex-col gap-1 py-4 border-b border-white/20">
+            <SidebarItem
+            open={open}
             selected={selectedType === 'ask'}
             icon={<Search className="w-5 h-5" />}
             label="Ask"
@@ -120,13 +130,6 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
             icon={<DatabaseBackup className="w-5 h-5" />}
             label="SEO Backup"
             onClick={() => onChangeType('backup')}
-          />
-          <SidebarItem
-            open={open}
-            selected={selectedType === 'googleads'}
-            icon={<Tags className="w-5 h-5" />} // You may want to use a different icon
-            label="Google Ads"
-            onClick={() => onChangeType('googleads')}
           />
         </nav>
       </aside>
