@@ -5,6 +5,7 @@ import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
 import Buttons from '../components/Buttons';
+import { useScraping } from '../components/ScrapingContext';
 
 function AskScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
@@ -30,6 +31,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
     return initial;
   });
   const { useProxy, customProxy, headless } = useSettings();
+  const { scraping, setScraping } = useScraping();
 
   useEffect(() => {
     (async () => {
@@ -48,6 +50,15 @@ function AskScraperForm({ viewMode = 'scraping' }) {
     if (!window.electron) return;
     const onStatus = (message: string) => {
       setStatusMessages((prev) => [...prev, message]);
+      // Stop scraping on completion/interruption or CSV saved
+      if (
+        message.includes('[✅] Dati salvati con successo.') ||
+        message.includes('[💾] Dati salvati dopo interruzione.') ||
+        message.includes('[STOP] Scraping interrotto dall\'utente.') ||
+        message.includes('[+] Record salvati nel file CSV')
+      ) {
+        setScraping(false);
+      }
     };
     if (window.electron.onStatus) window.electron.onStatus(onStatus);
     if (window.electron.onResetLogs) window.electron.onResetLogs(() => setStatusMessages([]));
@@ -56,7 +67,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
         setStatusMessages((prev) => [...prev, `Attenzione: ${message} [CAPTCHA richiesto]`]);
       });
     }
-  }, []);
+  }, [setScraping]);
 
   useEffect(() => {
     if (statusRef.current) {
@@ -118,6 +129,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
       return;
     }
     if (window.electron && window.electron.startScraping) {
+      setScraping(true);
       window.electron.startScraping(
         searchString,
         'faq',
@@ -136,6 +148,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
   const handleStopScraping = () => {
     if (window.electron && window.electron.stopScraping) {
       window.electron.stopScraping();
+      setScraping(false);
     }
   };
 
@@ -180,6 +193,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
             placeholder="Inserisci le query di ricerca separate da virgola"
             value={searchString}
             onChange={handleSearchChange}
+            disabled={scraping}
           />
           <div className="mb-2 flex gap-4">
             <label className="flex items-center gap-1">
@@ -187,6 +201,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
                 type="checkbox"
                 checked={scrapeTypes.includes('ask')}
                 onChange={() => handleScrapeTypeChange('ask')}
+                disabled={scraping}
               />
               Ask (FAQ)
             </label>
@@ -195,6 +210,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
                 type="checkbox"
                 checked={scrapeTypes.includes('ricerche_correlate')}
                 onChange={() => handleScrapeTypeChange('ricerche_correlate')}
+                disabled={scraping}
               />
               Ricerche correlate
             </label>
@@ -211,6 +227,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
               value={maxToProcess}
               onChange={handleMaxToProcessChange}
               className="input w-32 px-2 py-1 border rounded text-black"
+              disabled={scraping}
             />
           </div>
           <ChooseFolder folderPath={folderPath} handleChooseFolder={handleChooseFolder} />

@@ -5,6 +5,7 @@ import SiteBackupDashboard from './SiteBackupDashboard';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
 import Buttons from '../components/Buttons';
+import { useScraping } from '../components/ScrapingContext';
 
 interface SiteBackupProps {
   viewMode?: 'scraping' | 'dashboard';
@@ -61,6 +62,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
   const [showRaw, setShowRaw] = useState(false);
   const [downloadMedia, setDownloadMedia] = useState(false);
   const { useProxy, customProxy, headless } = useSettings();
+  const { scraping, setScraping } = useScraping();
 
   useEffect(() => {
     (async () => {
@@ -79,6 +81,16 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
     if (!window.electron) return;
     const onStatus = (message: string) => {
       setStatusMessages((prev) => [...prev, message]);
+      // Stop scraping on completion/interruption or CSV saved
+      if (
+        message.includes('[✅] Dati salvati con successo.') ||
+        message.includes('[💾] Dati salvati dopo interruzione.') ||
+        message.includes('[STOP] Scraping interrotto dall\'utente.') ||
+        message.includes('🧾 CSV globale salvato:') ||
+        message.includes('📄 CSV salvato:')
+      ) {
+        setScraping(false);
+      }
     };
     if (window.electron.onStatus) window.electron.onStatus(onStatus);
     if (window.electron.onResetLogs) window.electron.onResetLogs(() => setStatusMessages([]));
@@ -93,7 +105,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
         setSelectedPage(null);
       });
     }
-  }, []);
+  }, [setScraping]);
 
   useEffect(() => {
     if (statusRef.current) {
@@ -133,6 +145,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
       return;
     }
     if (window.electron && window.electron.startBackupScraping) {
+      setScraping(true);
       window.electron.startBackupScraping(
         searchString,
         folderPath,
@@ -148,6 +161,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
   const handleStopScraping = () => {
     if (window.electron && window.electron.stopScraping) {
       window.electron.stopScraping();
+      setScraping(false);
     }
   };
 
@@ -184,6 +198,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
             placeholder="Url della sitemap o delle pagine separati da virgola"
             value={searchString}
             onChange={handleSearchChange}
+            disabled={scraping}
           />
           <ChooseFolder folderPath={folderPath} handleChooseFolder={handleChooseFolder} />
           {/* Proxy and headless controls removed, now set in SettingsPage */}
@@ -195,6 +210,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
                 checked={fullBackup}
                 onChange={(e) => setFullBackup(e.target.checked)}
                 className="mr-2"
+                disabled={scraping}
               />
               Scarica gli screeshot delle pagine e i CSV singoli
             </label>
@@ -207,6 +223,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
                 checked={downloadMedia}
                 onChange={(e) => setDownloadMedia(e.target.checked)}
                 className="mr-2"
+                disabled={scraping}
               />
               Scarica tutti i media (immagini, video)
             </label>

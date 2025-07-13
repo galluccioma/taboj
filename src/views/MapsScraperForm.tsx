@@ -6,6 +6,7 @@ import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
 import Buttons from '../components/Buttons';
 import ProgressBar from '../components/ProgressBar';
+import { useScraping } from '../components/ScrapingContext';
 
 interface MapsScraperFormProps {
   viewMode?: 'scraping' | 'dashboard';
@@ -23,6 +24,7 @@ function MapsScraperForm({ viewMode = 'scraping' }: MapsScraperFormProps) {
   const [currentCsvPath, setCurrentCsvPath] = useState<string>('');
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const { useProxy, customProxy, headless } = useSettings();
+  const { scraping, setScraping } = useScraping();
 
   useEffect(() => {
     (async () => {
@@ -55,9 +57,11 @@ function MapsScraperForm({ viewMode = 'scraping' }: MapsScraperFormProps) {
       if (
         message.includes('[✅] Dati salvati con successo.') ||
         message.includes('[💾] Dati salvati dopo interruzione.') ||
-        message.includes('[STOP] Scraping interrotto dall\'utente.')
+        message.includes('[STOP] Scraping interrotto dall\'utente.') ||
+        message.includes('[+] Record salvati nel file CSV')
       ) {
         setProgress({ current: 0, total: 0 });
+        setScraping(false);
       }
     };
     if (window.electron.onStatus) window.electron.onStatus(onStatus);
@@ -67,7 +71,7 @@ function MapsScraperForm({ viewMode = 'scraping' }: MapsScraperFormProps) {
         setStatusMessages((prev) => [...prev, `Attenzione: ${message} [CAPTCHA richiesto]`]);
       });
     }
-  }, []);
+  }, [setScraping]);
 
   useEffect(() => {
     if (statusRef.current) {
@@ -107,6 +111,7 @@ function MapsScraperForm({ viewMode = 'scraping' }: MapsScraperFormProps) {
       return;
     }
     if (window.electron && window.electron.startScraping) {
+      setScraping(true);
       window.electron.startScraping(
         searchString,
         'maps',
@@ -125,6 +130,7 @@ function MapsScraperForm({ viewMode = 'scraping' }: MapsScraperFormProps) {
   const handleStopScraping = () => {
     if (window.electron && window.electron.stopScraping) {
       window.electron.stopScraping();
+      setScraping(false);
     }
   };
 
@@ -171,6 +177,7 @@ function MapsScraperForm({ viewMode = 'scraping' }: MapsScraperFormProps) {
             placeholder="Inserisci le query di ricerca separate da virgola"
             value={searchString}
             onChange={handleSearchChange}
+            disabled={scraping}
           />
           <ChooseFolder folderPath={folderPath} handleChooseFolder={handleChooseFolder} />
           {/* Proxy and headless controls removed, now set in SettingsPage */}

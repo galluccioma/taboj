@@ -5,6 +5,7 @@ import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
 import Buttons from '../components/Buttons';
+import { useScraping } from '../components/ScrapingContext';
 
 function DnsScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
@@ -23,6 +24,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
   const [showRaw, setShowRaw] = useState(false);
   const [currentCsvPath, setCurrentCsvPath] = useState<string>('');
   const { useProxy, customProxy, headless } = useSettings();
+  const { scraping, setScraping } = useScraping();
 
   const dnsTypes = ['A', 'NS', 'MX', 'TXT', 'CNAME', 'AAAA'];
 
@@ -43,6 +45,16 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
     if (!window.electron) return;
     const onStatus = (message: string) => {
       setStatusMessages((prev) => [...prev, message]);
+      // Stop scraping on completion/interruption or CSV saved
+      if (
+        message.includes('[✅] Dati salvati con successo.') ||
+        message.includes('[💾] Dati salvati dopo interruzione.') ||
+        message.includes('[STOP] Scraping interrotto dall\'utente.') ||
+        message.includes('[+] Record salvati nel file CSV') ||
+        message.includes('[log] CSV DNS salvato:')
+      ) {
+        setScraping(false);
+      }
     };
     if (window.electron.onStatus) window.electron.onStatus(onStatus);
     if (window.electron.onResetLogs) window.electron.onResetLogs(() => setStatusMessages([]));
@@ -51,7 +63,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
         setStatusMessages((prev) => [...prev, `Attenzione: ${message} [CAPTCHA richiesto]`]);
       });
     }
-  }, []);
+  }, [setScraping]);
 
   useEffect(() => {
     if (statusRef.current) {
@@ -103,6 +115,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
       return;
     }
     if (window.electron && window.electron.startScraping) {
+      setScraping(true);
       window.electron.startScraping(
         searchString,
         'dns',
@@ -121,6 +134,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
   const handleStopScraping = () => {
     if (window.electron && window.electron.stopScraping) {
       window.electron.stopScraping();
+      setScraping(false);
     }
   };
 
@@ -168,6 +182,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
             placeholder="Inserisci i domini separati da virgola (non includere https://)"
             value={searchString}
             onChange={handleSearchChange}
+            disabled={scraping}
           />
           <div className="mb-4 space-y-2">
             <div>
@@ -180,6 +195,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
                     id={`dns-type-${type}`}
                     checked={dnsRecordTypes.includes(type)}
                     onChange={() => handleDnsTypeChange(type)}
+                    disabled={scraping}
                   />
                   {type}
                 </label>
@@ -190,6 +206,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
                   id="aMailCheckbox"
                   checked={doAMail}
                   onChange={(e) => handleAMailChange(e.target.checked)}
+                  disabled={scraping}
                 />{' '}
                 A (mail.dominio)
               </label>
@@ -202,6 +219,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
                   id="lighthouseCheckbox"
                   checked={doLighthouse}
                   onChange={(e) => setDoLighthouse(e.target.checked)}
+                  disabled={scraping}
                 />{' '}
                 Lighthouse Audit 🌐
               </label>
@@ -211,6 +229,7 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
                   id="waybackCheckbox"
                   checked={doWayback}
                   onChange={(e) => setDoWayback(e.target.checked)}
+                  disabled={scraping}
                 />{' '}
                 Wayback Machine 🕰️
               </label>

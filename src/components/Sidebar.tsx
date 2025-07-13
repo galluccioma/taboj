@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Map, Globe, Search, DatabaseBackup, Menu, X, SettingsIcon, Tags } from 'lucide-react';
 import customIcon from '../assets/icons/icon.png';
+import { useScraping } from './ScrapingContext';
 
 interface SidebarProps {
   selectedType: string;
@@ -43,15 +44,17 @@ function SidebarItem({
 }
 
 // Setting Button
-function SettingButton({ onOpenSettings }: { onOpenSettings: () => void }) {
+function SettingButton({ onOpenSettings, disabled }: { onOpenSettings: () => void; disabled?: boolean }) {
   return (
     <button
       className="fixed bottom-10 right-10 undraggable px-3 py-2 hover:bg-gray-700 rounded-full"
       title="Impostazioni"
       onClick={(e) => {
         e.stopPropagation();
-        onOpenSettings();
+        if (!disabled) onOpenSettings();
       }}
+      disabled={disabled}
+      style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}}
     >
       <SettingsIcon className="w-6 h-6" />
     </button>
@@ -60,6 +63,7 @@ function SettingButton({ onOpenSettings }: { onOpenSettings: () => void }) {
 
 function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
   const [open, setOpen] = useState(false);
+  const { scraping } = useScraping();
 
   // Sidebar content
   const sidebarContent = (
@@ -67,7 +71,7 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
       <aside
         className={`fixed top-0 flex flex-col h-full pt-12 bg-slate-800 border-r border-gray-600 text-white shadow-lg transition-all duration-300 ${
           open ? 'w-64' : 'w-16'
-        }  top-0 left-0 z-50 undraggable`}
+        }  top-0 left-0 z-50 undraggable ${scraping ? 'pointer-events-none opacity-50' : ''}`}
         style={{ minHeight: '100vh' }}
       >
         {/* Header */}
@@ -86,6 +90,7 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
             className="undraggable p-1 rounded hover:bg-gray-700 focus:outline-none"
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? 'Close sidebar' : 'Open sidebar'}
+            disabled={scraping}
           >
             {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -135,7 +140,7 @@ function Sidebar({ selectedType, onChangeType, onOpenSettings }: SidebarProps) {
           />
         </nav>
       </aside>
-      <SettingButton onOpenSettings={onOpenSettings} />
+      <SettingButton onOpenSettings={onOpenSettings} disabled={scraping} />
     </>
   );
 

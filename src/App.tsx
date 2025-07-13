@@ -8,6 +8,7 @@ import SiteBackup from './views/SiteBackup';
 import SettingsPage from './views/SettingsPage';
 import AdsScraperForm from './views/AdsScraperForm';
 import { SettingsProvider } from './components/SettingsContext';
+import { ScrapingProvider } from './components/ScrapingContext';
 
 function App() {
   const [scrapingType, setScrapingType] = useState('maps');
@@ -58,23 +59,25 @@ function App() {
 
   return (
     <SettingsProvider>
-      <div className="flex min-h-screen bg-slate-900">
-        {/* Sidebar overlays content on mobile, is fixed on desktop */}
-        <AppBar
-          viewMode={viewMode}
-          onChangeViewMode={setViewMode}
-          title={showSettings ? 'Impostazioni' : undefined}
-        />
-
-        {/* Main content, add left margin for sidebar on desktop */}
-        <div className="flex-1 flex items-center justify-start transition-all duration-300">
-          <Sidebar selectedType={showSettings ? 'settings' : scrapingType} onChangeType={handleChangeType} onOpenSettings={handleOpenSettings}
+      <ScrapingProvider>
+        <div className="flex min-h-screen bg-slate-900">
+          {/* Sidebar overlays content on mobile, is fixed on desktop */}
+          <AppBar
+            viewMode={viewMode}
+            onChangeViewMode={setViewMode}
+            title={showSettings ? 'Impostazioni' : undefined}
           />
-          <main className="w-full sm:max-w-3xl max-w-5xl xl:max-w-7xl p-16 mx-auto h-full ">
-            {showSettings ? <SettingsPage onBack={handleCloseSettings} /> : formComponent}
-          </main>
+
+          {/* Main content, add left margin for sidebar on desktop */}
+          <div className="flex-1 flex items-center justify-start transition-all duration-300">
+            <Sidebar selectedType={showSettings ? 'settings' : scrapingType} onChangeType={handleChangeType} onOpenSettings={handleOpenSettings}
+            />
+            <main className="w-full sm:max-w-3xl max-w-5xl xl:max-w-7xl p-16 mx-auto h-full ">
+              {showSettings ? <SettingsPage onBack={handleCloseSettings} /> : formComponent}
+            </main>
+          </div>
         </div>
-      </div>
+      </ScrapingProvider>
     </SettingsProvider>
   );
 }

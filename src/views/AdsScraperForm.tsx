@@ -5,6 +5,7 @@ import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
 import Dashboard from './Dashboard';
 import Buttons from '../components/Buttons';
+import { useScraping } from '../components/ScrapingContext';
 
 function AdsScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
@@ -14,25 +15,15 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
   const [csvFiles, setCsvFiles] = useState<string[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedPage, setSelectedPage] = useState<any | null>(null);
-  const [showRaw, setShowRaw] = useState(false);
   const [currentCsvPath, setCurrentCsvPath] = useState<string>('');
-  const { useProxy, customProxy, headless, metaAdsAccessToken, setMetaAdsAccessToken, googleServiceAccountKeyPath, setGoogleServiceAccountKeyPath, googleProjectId, setGoogleProjectId } = useSettings();
+  const { useProxy, customProxy, headless, metaAdsAccessToken,  googleServiceAccountKeyPath, googleProjectId } = useSettings();
   const [adType, setAdType] = useState<'google' | 'meta'>('google');
   // Meta Page ID state, persisted in localStorage
   const [metaPageId, setMetaPageId] = useState(() => localStorage.getItem('metaads_pageId') || '');
   // Local state for advertiser name
   const [advertiser, setAdvertiser] = useState(() => localStorage.getItem('googleads_advertiser') || '');
+  const { scraping, setScraping } = useScraping();
 
-  // Gestione scelta file Google Service Account (preferisci chooseFile per .json, fallback chooseFolder)
-  const handleChooseKeyFile = async () => {
-    if (window.electron && window.electron.chooseFile) {
-      const filePath = await window.electron.chooseFile({ filters: [{ name: 'JSON', extensions: ['json'] }] });
-      if (filePath) setGoogleServiceAccountKeyPath(filePath);
-    } else if (window.electron && window.electron.chooseFolder) {
-      const path = await window.electron.chooseFolder();
-      if (path) setGoogleServiceAccountKeyPath(path);
-    }
-  };
 
   // Persist metaPageId to localStorage on change
   useEffect(() => {
@@ -60,6 +51,15 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
     if (!window.electron) return;
     const onStatus = (message: string) => {
       setStatusMessages((prev) => [...prev, message]);
+      // Stop scraping on completion/interruption or CSV saved
+      if (
+        message.includes('[✅] Dati salvati con successo.') ||
+        message.includes('[💾] Dati salvati dopo interruzione.') ||
+        message.includes('[STOP] Scraping interrotto dall\'utente.') ||
+        message.includes('✅ File CSV salvato in:')
+      ) {
+        setScraping(false);
+      }
     };
     if (window.electron.onStatus) window.electron.onStatus(onStatus);
     if (window.electron.onResetLogs) window.electron.onResetLogs(() => setStatusMessages([]));
@@ -68,7 +68,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
         setStatusMessages((prev) => [...prev, `Attenzione: ${message} [CAPTCHA richiesto]`]);
       });
     }
-  }, []);
+  }, [setScraping]);
 
   useEffect(() => {
     if (statusRef.current) {
@@ -100,6 +100,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
 
   const handleStartScraping = () => {
     if (window.electron && window.electron.startScraping) {
+      setScraping(true);
       if (adType === 'google') {
         window.electron.startScraping(
           advertiser, // local state
@@ -128,6 +129,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
   const handleStopScraping = () => {
     if (window.electron && window.electron.stopScraping) {
       window.electron.stopScraping();
+      setScraping(false);
     }
   };
 
@@ -189,6 +191,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
                   value={advertiser}
                   onChange={(e) => setAdvertiser(e.target.value)}
                   placeholder="Nome inserzionista"
+                  disabled={scraping}
                 />
               </div>
               <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-slate-800 rounded">
@@ -214,6 +217,7 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
                   value={metaPageId}
                   onChange={(e) => setMetaPageId(e.target.value)}
                   placeholder="ID Pagina Facebook"
+                  disabled={scraping}
                 />
               </div>
               <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-slate-800 rounded">
