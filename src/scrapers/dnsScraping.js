@@ -4,6 +4,7 @@ import path from 'path';
 import axios from 'axios';
 import { execFile } from 'child_process';
 import { stopFlag } from '../utils/config';
+import dns from 'dns/promises'; // <--- aggiunto per le query DNS
 
 
 
@@ -155,6 +156,58 @@ export async function performDnsScraping(
 
       win.webContents.send('status', `\n🔍 Analisi DNS/Lighthouse/Wayback per: ${domain}`);
       const record = { domain };
+
+      // --- Query DNS per i tipi selezionati ---
+      if (Array.isArray(dnsRecordTypes) && dnsRecordTypes.length > 0) {
+        for (const type of dnsRecordTypes) {
+          try {
+            let result;
+            switch (type.toUpperCase()) {
+              case 'A':
+                result = await dns.resolve(domain, 'A');
+                record.a_records = result;
+                break;
+              case 'MX':
+                result = await dns.resolveMx(domain);
+                record.mx_records = result;
+                break;
+              case 'TXT':
+                result = await dns.resolveTxt(domain);
+                record.txt_records = result;
+                break;
+              case 'CNAME':
+                result = await dns.resolveCname(domain);
+                record.cname_records = result;
+                break;
+              case 'AAAA':
+                result = await dns.resolve6(domain);
+                record.aaaa_records = result;
+                break;
+              case 'NS':
+              case 'ANS':
+                result = await dns.resolveNs(domain);
+                record.ns_records = result;
+                break;
+              default:
+                // Tipo non gestito
+                break;
+            }
+          } catch (err) {
+            record[`${type.toLowerCase()}_error`] = err.message;
+          }
+        }
+      }
+
+      // --- Query A record per mail.dominio se richiesto ---
+      if (doAMail) {
+        try {
+          const mailDomain = `mail.${domain}`;
+          const mailA = await dns.resolve(mailDomain, 'A');
+          record.mail_a_records = mailA;
+        } catch (err) {
+          record.mail_a_error = err.message;
+        }
+      }
 
       // HTTP Status and SSL Status
       try {
