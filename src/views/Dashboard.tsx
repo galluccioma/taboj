@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Filter, EyeOff, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react';
+import AiChatDialog from '../components/AiChatDialog';
 
-function Dashboard({ data, csvPath }: { data: Record<string, any>[]; csvPath?: string }) {
+function Dashboard({ data }: { data: Record<string, any>[] }) {
   if (!data || !Array.isArray(data) || data.length === 0) {
     return (
       <div className="text-center py-12">
@@ -14,77 +15,9 @@ function Dashboard({ data, csvPath }: { data: Record<string, any>[]; csvPath?: s
   const [filters, setFilters] = useState<{ [key: string]: string }>({});
   const [hiddenCols, setHiddenCols] = useState<string[]>([]);
   const [sort, setSort] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: '', direction: null });
-  const [analyzing, setAnalyzing] = useState(false);
-  const [aiError, setAiError] = useState('');
-  const [aiFileExists, setAiFileExists] = useState(false);
+  const [showAiChat, setShowAiChat] = useState(false);
 
-  // Funzione per controllare se il file AI esiste
-  async function checkAiFileExists(filePath: string) {
-    if (window.electron && (window.electron as any).invoke) {
-      try {
-        const aiPath = filePath.replace(/\.csv$/i, '.txt');
-        const exists = await (window.electron as any).invoke('check-ai-analysis-file', { aiFilePath: aiPath });
-        setAiFileExists(!!exists);
-      } catch {
-        setAiFileExists(false);
-      }
-    }
-  }
-
-  // Controlla se il file AI esiste quando cambia il CSV
-  useEffect(() => {
-    if (!csvPath) return;
-    checkAiFileExists(csvPath);
-  }, [csvPath]);
-
-  // Funzione per analisi AI
-  async function handleAiAnalysis() {
-    setAnalyzing(true);
-    setAiError('');
-    try {
-      if (window.electron && (window.electron as any).invoke) {
-        const result = await (window.electron as any).invoke('analyze-csv', {
-          data,
-          csvPath: csvPath || ''
-        });
-        if (result.success) {
-          alert('Analisi AI completata e salvata nella stessa cartella del CSV!');
-          setAiFileExists(true);
-        } else {
-          setAiError(result.error || 'Errore durante l\'analisi AI.');
-        }
-      } else {
-        setAiError('Funzione non disponibile in questo ambiente.');
-      }
-    } catch (e: any) {
-      setAiError(e?.message || 'Errore durante l\'analisi AI.');
-    }
-    setAnalyzing(false);
-  }
-
-  // Funzione per mostrare il file di analisi AI
-  async function handleShowAiFile() {
-    try {
-      if (window.electron && (window.electron as any).invoke) {
-        await (window.electron as any).invoke('open-ai-analysis-file', { csvPath });
-      }
-    } catch (e) {
-      setAiError('Errore nell\'apertura del file di analisi AI.');
-    }
-  }
-
-  // Funzione per eliminare il file di analisi AI
-  async function handleDeleteAiFile() {
-    try {
-      if (window.electron && (window.electron as any).invoke) {
-        await (window.electron as any).invoke('delete-ai-analysis-file', { csvPath });
-        setAiFileExists(false);
-        alert('File di analisi AI eliminato.');
-      }
-    } catch (e) {
-      setAiError('Errore nell\'eliminazione del file di analisi AI.');
-    }
-  }
+  // --- Solo chat AI e controlli non-AI ---
 
   const filteredData = data.filter((row) =>
     headers.every(
@@ -115,32 +48,13 @@ function Dashboard({ data, csvPath }: { data: Record<string, any>[]; csvPath?: s
     <div className="space-y-6">
       {/* Controls */}
       <div className="flex flex-wrap gap-3">
-        {/* Pulsante Analisi AI */}
+        {/* Pulsante per aprire la chat AI */}
         <button
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-sm font-medium"
-          onClick={handleAiAnalysis}
-          disabled={analyzing}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-sm font-medium"
+          onClick={() => setShowAiChat(true)}
         >
-          {analyzing ? 'Analisi AI in corso...' : 'Analizza con AI'}
+          Chatta con AI
         </button>
-        {/* Pulsante Mostra File AI solo se esiste */}
-        {aiFileExists && (
-          <button
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-sm font-medium"
-            onClick={handleShowAiFile}
-          >
-            Mostra File
-          </button>
-        )}
-        {/* Pulsante Elimina AI solo se esiste */}
-        {aiFileExists && (
-          <button
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-sm font-medium"
-            onClick={handleDeleteAiFile}
-          >
-            Elimina
-          </button>
-        )}
         {hiddenCols.length > 0 && (
           <button
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-sm font-medium"
@@ -155,7 +69,6 @@ function Dashboard({ data, csvPath }: { data: Record<string, any>[]; csvPath?: s
           {sortedData.length} di {data.length} risultati
         </div>
       </div>
-
       {/* Table Container */}
       <div className="bg-slate-900/50 rounded-2xl border border-slate-700/50 overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
@@ -224,16 +137,14 @@ function Dashboard({ data, csvPath }: { data: Record<string, any>[]; csvPath?: s
           </table>
         </div>
       </div>
-
       {sortedData.length === 0 && (
         <div className="text-center py-8">
           <div className="text-slate-400 text-lg mb-2">🔍</div>
           <p className="text-slate-400">Nessun risultato trovato con i filtri applicati</p>
         </div>
       )}
-      {aiError && (
-        <div className="text-red-400 mt-4">{aiError}</div>
-      )}
+      {/* Dialog per la chat AI */}
+      <AiChatDialog open={showAiChat} onClose={() => setShowAiChat(false)} context={data} />
     </div>
   );
 }
