@@ -1,6 +1,6 @@
 {
   "name": "taboj",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "license": "MIT",
   "main": "dist-electron/index.js",
   "author": {
