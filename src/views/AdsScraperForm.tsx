@@ -5,7 +5,6 @@ import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
 import Dashboard from './Dashboard';
 import Buttons from '../components/Buttons';
-import { ChevronLeft } from 'lucide-react';
 
 function AdsScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');

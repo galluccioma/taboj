@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useSettings } from '../components/SettingsContext';
 import { ChevronLeft } from 'lucide-react';
+import { useSettings } from '../components/SettingsContext';
 
 interface SettingsPageProps {
   onBack?: () => void;

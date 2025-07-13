@@ -5,9 +5,13 @@ import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
 import Buttons from '../components/Buttons';
-import { ChevronLeft } from 'lucide-react';
+import ProgressBar from '../components/ProgressBar';
 
-function MapsScraperForm({ viewMode = 'scraping' }) {
+interface MapsScraperFormProps {
+  viewMode?: 'scraping' | 'dashboard';
+}
+
+function MapsScraperForm({ viewMode = 'scraping' }: MapsScraperFormProps) {
   const [username, setUsername] = useState('Utente');
   const [searchString, setSearchString] = useState(() => localStorage.getItem('maps_searchString') || '');
   const [folderPath, setFolderPath] = useState(() => localStorage.getItem('maps_folderPath') || '');
@@ -16,9 +20,8 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
   const [csvFiles, setCsvFiles] = useState<string[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedPage, setSelectedPage] = useState<any | null>(null);
-  const [backupPages, setBackupPages] = useState<any[]>([]);
-  const [showRaw, setShowRaw] = useState(false);
   const [currentCsvPath, setCurrentCsvPath] = useState<string>('');
+  const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const { useProxy, customProxy, headless } = useSettings();
 
   useEffect(() => {
@@ -38,6 +41,24 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
     if (!window.electron) return;
     const onStatus = (message: string) => {
       setStatusMessages((prev) => [...prev, message]);
+      // Estrai il totale stimato dai risultati
+      const totalMatch = message.match(/📊 Risultati totali stimati: (\d+)/);
+      if (totalMatch) {
+        setProgress((prev) => ({ ...prev, total: parseInt(totalMatch[1], 10) }));
+      }
+      // Estrai progresso da messaggi tipo: '[+] (current/total) ...'
+      const match = message.match(/\[\+\] \((\d+)[/](\d+)\)/);
+      if (match) {
+        setProgress((prev) => ({ ...prev, current: parseInt(match[1], 10) }));
+      }
+      // Reset progress a fine scraping
+      if (
+        message.includes('[✅] Dati salvati con successo.') ||
+        message.includes('[💾] Dati salvati dopo interruzione.') ||
+        message.includes('[STOP] Scraping interrotto dall\'utente.')
+      ) {
+        setProgress({ current: 0, total: 0 });
+      }
     };
     if (window.electron.onStatus) window.electron.onStatus(onStatus);
     if (window.electron.onResetLogs) window.electron.onResetLogs(() => setStatusMessages([]));
@@ -116,7 +137,6 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
   const handleViewCsv = async (file: string) => {
     if (window.electron && (window.electron as any).invoke) {
       const data = await (window.electron as any).invoke('read-maps-csv', file);
-      setBackupPages(data);
       setSelectedPage(data);
       setCurrentCsvPath(file);
     }
@@ -128,7 +148,6 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
       setCsvFiles((files) => files.filter((f) => f !== file));
       if (selectedPage && selectedPage.csvPath === file) {
         setSelectedPage(null);
-        setBackupPages([]);
       }
     }
   };
@@ -142,6 +161,10 @@ function MapsScraperForm({ viewMode = 'scraping' }) {
           <p className="text-lg mb-4">
             Questo strumento consente di cercare e scaricare dati dei Lead da Google Maps. 
           </p>
+          {/* Barra di progresso */}
+          {progress.total > 0 && (
+            <ProgressBar current={progress.current} total={progress.total} />
+          )}
           <input
             type="text"
             className="input w-full mb-2 px-3 py-2 border rounded text-black"

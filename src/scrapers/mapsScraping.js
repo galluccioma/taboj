@@ -176,11 +176,13 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
   )}&oq=${encodeURIComponent(searchString)}&src=2`;
 
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  if (stopFlag.value) { await page.close(); return scrapeData; }
 
   const acceptAllButton = await page.$('button[aria-label="Accept all"], button[aria-label="Accetta tutto"], #L2AGLb');
   if (acceptAllButton) {
     await acceptAllButton.click();
     await delay(3000);
+    if (stopFlag.value) { await page.close(); return scrapeData; }
   }
 
   let totalResults = 'UNKNOWN';
@@ -194,27 +196,33 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
 
   const getPageData = async () => {
     const cards = await page.$$('div[data-test-id="organic-list-card"]');
-
     for (const [index, card] of cards.entries()) {
       if (stopFlag.value) break;
-
       try {
         const button = await card.$('div[role="button"] > div:first-of-type');
         if (button) {
           await button.click();
+          if (stopFlag.value) break;
           await page.waitForSelector('.tZPcob', { timeout: 8000 }).catch(() => {});
           await delay(1500);
+          if (stopFlag.value) break;
 
           const name = await page.$eval('.tZPcob', (el) => el.innerText).catch(() => 'NONE');
+          if (stopFlag.value) break;
           const phone = await page
             .$eval('[data-phone-number][role="button"][class*=" "] div:last-of-type', (el) => el.innerHTML)
             .catch(() => 'NONE');
+          if (stopFlag.value) break;
           const website = await page.$eval('.iPF7ob > div:last-of-type', (el) => el.innerHTML).catch(() => 'NONE');
+          if (stopFlag.value) break;
           const address = await page.$eval('.fccl3c', (el) => el.innerText).catch(() => 'NONE');
+          if (stopFlag.value) break;
           const rating = await page.$eval('.pNFZHb .rGaJuf', (el) => el.innerHTML).catch(() => 'NONE');
+          if (stopFlag.value) break;
           const ratingNumber = await page
             .$eval('.QwSaG .leIgTe', (el) => el.innerHTML.replace(/\(|\)/g, ''))
             .catch(() => 'NONE');
+          if (stopFlag.value) break;
 
           let mail = null;
           let piva = null;
@@ -225,25 +233,26 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
             try {
               const websiteURL = website.startsWith('http') ? website : `https://${website}`;
               const response = await axios.get(websiteURL, { timeout: 12000 });
+              if (stopFlag.value) break;
               const html = response.data;
               mail = extractMail(html);
               piva = extractPiva(html);
               if (piva && /^\d{11}$/.test(piva)) {
                 win.webContents.send('status', `🔍 Verifica VIES per P.IVA: ${piva}`);
                 await delay(2000); // Importante: evita blocchi dal server
+                if (stopFlag.value) break;
                 const vatData = await checkVat(piva);
+                if (stopFlag.value) break;
                 if (vatData) {
                   ragioneSociale = vatData.name;
                 } else {
                   win.webContents.send('status', `[!] Dati VIES non trovati per ${piva}`);
                 }
-                // --- New logic: Google search for P.IVA and extract Fatturato ---
                 fatturato = await extractFatturato(piva, browser);
+                if (stopFlag.value) break;
                 win.webContents.send('status', `💸 scraping FATTURATO per P.IVA: ${piva}`);
-
-                // --- End new logic ---
               }
-            } catch (_) {}
+            } catch (_) { if (stopFlag.value) break; }
           }
 
           scrapeData.push({
@@ -260,20 +269,24 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
           });
           win.webContents.send('status', `[+] (${index + 1}/${cards.length}) ${name}`);
           await delay(1000);
+          if (stopFlag.value) break;
         }
       } catch (err) {
         win.webContents.send('status', `[x] Errore card ${index + 1}: ${err.message}`);
+        if (stopFlag.value) break;
       }
     }
-
+    if (stopFlag.value) return;
     const nextButton = await page.$('button[aria-label="Next"]');
     if (nextButton) {
       try {
         await nextButton.click();
         await delay(7000);
+        if (stopFlag.value) return;
         await getPageData();
       } catch (err) {
         win.webContents.send('status', `[!] Errore clic pagina successiva: ${err.message}`);
+        if (stopFlag.value) return;
       }
     }
   };
@@ -307,7 +320,6 @@ export async function saveMapsData(data, startTime, folderPath, win, searchQueri
 // Funzione di Scraping che chiama le altre funzioni
 export async function performMapsScraping(searchString, folderPath, win, headless, useProxy, customProxy) {
   stopFlag.value = false; // Reset stop flag at the start
-  // Use base output folder if none provided
   if (!folderPath) {
     const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output'));
     folderPath = path.join(baseOutput, 'maps');
@@ -315,56 +327,42 @@ export async function performMapsScraping(searchString, folderPath, win, headles
   const searchQueries = searchString.split(',').map(q => q.trim()).filter(Boolean);
   let allData = [];
   let stopped = false;
+  let browser = null;
 
   try {
     for (const query of searchQueries) {
-      if (stopFlag.value) {
-        win.webContents.send('status', `[🛑] Interrotto prima di iniziare la query: ${query}`);
-        stopped = true;
-        break;
-      }
-
+      if (stopFlag.value) break;
       try {
         win.webContents.send('status', `🔍 Cercando: ${query}`);
         const proxy = useProxy ? customProxy : null;
-        const browser = await launchBrowser({ headless, proxy });
-
+        browser = await launchBrowser({ headless, proxy });
+        if (stopFlag.value) { await browser.close(); break; }
         const data = await scrapeGoogleMaps(query, browser, win);
         await browser.close();
-
+        browser = null;
         allData.push(...data.map(d => ({ ...d, searchQuery: query })));
-
-        if (stopFlag.value) {
-          win.webContents.send('status', `[🛑] Interruzione richiesta dopo la query: ${query}`);
-          stopped = true;
-          break;
-        }
+        if (stopFlag.value) break;
       } catch (error) {
+        if (browser) { await browser.close(); browser = null; }
         win.webContents.send('status', `Errore durante la ricerca "${query}": ${error.message}`);
-        if (stopFlag.value) {
-          win.webContents.send('status', `[🛑] Interruzione richiesta dopo la query: ${query}`);
-          stopped = true;
-          break;
-        }
+        if (stopFlag.value) break;
       }
     }
   } finally {
+    if (browser) { await browser.close(); browser = null; }
+    // Salva subito il CSV se interrotto
     if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
-
     const before = allData.length;
     allData = removeDuplicates(allData);
     const after = allData.length;
     const removed = before - after;
     win.webContents.send('status', `[info] Rimossi ${removed} duplicati.`);
-
     await saveMapsData(allData, new Date(), folderPath, win, searchQueries);
-
-    if (stopped || stopFlag.value) {
+    if (stopFlag.value) {
       win.webContents.send('status', '[💾] Dati salvati dopo interruzione.');
     } else {
       win.webContents.send('status', '[✅] Dati salvati con successo.');
     }
-
     stopFlag.value = false; // Reset after use
   }
 }

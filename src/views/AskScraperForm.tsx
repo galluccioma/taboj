@@ -5,7 +5,6 @@ import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
 import Buttons from '../components/Buttons';
-import { ChevronLeft } from 'lucide-react';
 
 function AskScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
