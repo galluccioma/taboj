@@ -160,7 +160,12 @@ function SettingsPage({ onBack }: SettingsPageProps) {
         </div>
       </div>
       <div className="mb-4">
-        <span className="block mb-2 font-semibold">Token HuggingFace AI</span>
+        <span className="flex mb-2 font-semibold w-full justify-between">
+          Token HuggingFace AI{' '}
+          <a href="https://huggingface.co/settings/tokens" target="blank">
+            🔑 Ottieni il tuo token AI
+          </a>
+        </span>
         <input
           type="text"
           className="input w-full px-3 py-2 border rounded text-black"
@@ -180,7 +185,12 @@ function SettingsPage({ onBack }: SettingsPageProps) {
         />
       </div>
       <div className="mb-4">
-        <span className="block mb-2 font-semibold">Percorso file chiave Google Service Account (JSON)</span>
+        <span className="flex w-full mb-2 font-semibold justify-between">
+          Percorso file chiave Google Service Account (JSON){' '}
+          <a href="https://console.cloud.google.com/apis/api/bigquery.googleapis.com" target="blank">
+            🔑 Ottieni la tua chiave Google
+          </a>
+        </span>
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -197,11 +207,6 @@ function SettingsPage({ onBack }: SettingsPageProps) {
           >
             Scegli File
           </button>
-          <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-slate-800 rounded">
-            <a href="https://console.cloud.google.com/apis/api/bigquery.googleapis.com" target="blank">
-              🔑 Ottieni la tua chiave Google
-            </a>
-          </button>
         </div>
       </div>
       <div className="mb-4">
@@ -215,21 +220,16 @@ function SettingsPage({ onBack }: SettingsPageProps) {
         />
       </div>
       <div className="mb-4">
-        <span className="block mb-2 font-semibold">Meta API Key</span>
-        <div className='flex items-center gap-2'>
-        <input
-          type="text"
-          className="input w-full px-3 py-2 border rounded text-black"
-          value={metaAdsAccessToken}
-          onChange={(e) => setMetaAdsAccessToken(e.target.value)}
-          placeholder="Meta API Key"
-        />
-        <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-slate-800 rounded">
-          <a href="https://www.facebook.com/ads/library/api" target="blank">
-            🔑 Ottieni la tua chiave Meta
-          </a>
-        </button>
-        </div>
+        <span className="flex w-full mb-2 font-semibold justify-between">Meta API Key <a href="https://www.facebook.com/ads/library/api" target="blank">
+              🔑 Ottieni la tua chiave Meta
+            </a></span>
+          <input
+            type="text"
+            className="input w-full px-3 py-2 border rounded text-black"
+            value={metaAdsAccessToken}
+            onChange={(e) => setMetaAdsAccessToken(e.target.value)}
+            placeholder="Meta API Key"
+          />
       </div>
       <button
         className="btn px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
