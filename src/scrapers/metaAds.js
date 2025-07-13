@@ -2,11 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import https from 'https';
 import { createObjectCsvWriter } from 'csv-writer';
+import { safeSendMessage } from '../utils/safeWindow.js';
 
 // Exported scraping function
 async function performMetaAdsScraping(pageId, folderPath, win, headless, useProxy, customProxy, accessToken) {
   if (!pageId || !accessToken) {
-    if (win && win.webContents) win.webContents.send('status', 'Page ID e/o Access Token mancanti.');
+    safeSendMessage(win, 'Page ID e/o Access Token mancanti.');
     return;
   }
 
@@ -14,7 +15,7 @@ async function performMetaAdsScraping(pageId, folderPath, win, headless, useProx
   if (!folderPath) {
     const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : process.cwd());
     folderPath = path.join(baseOutput, 'googleads'); // Use 'googleads' folder for Meta Ads too
-    if (win && win.webContents) win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);
+    safeSendMessage(win, `[INFO] i file saranno salvati nella cartella: ${folderPath}`);
   }
   if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
 
@@ -38,7 +39,7 @@ async function performMetaAdsScraping(pageId, folderPath, win, headless, useProx
 
   const url = `https://graph.facebook.com/v18.0/ads_archive?${params.toString()}`;
 
-  if (win && win.webContents) win.webContents.send('status', `[INFO] Richiesta Meta API per pageId: ${pageId}`);
+  safeSendMessage(win, `[INFO] Richiesta Meta API per pageId: ${pageId}`);
 
   // Helper to fetch data
   function fetchAds() {
@@ -67,7 +68,7 @@ async function performMetaAdsScraping(pageId, folderPath, win, headless, useProx
   try {
     const ads = await fetchAds();
     if (!ads.length) {
-      if (win && win.webContents) win.webContents.send('status', '[!] Nessun annuncio trovato.');
+      safeSendMessage(win, '[!] Nessun annuncio trovato.');
       return;
     }
     // Prepare data for CSV
@@ -100,11 +101,11 @@ async function performMetaAdsScraping(pageId, folderPath, win, headless, useProx
       ]
     });
     await csvWriter.writeRecords(csvData);
-    if (win && win.webContents) win.webContents.send('status', `✅ File CSV salvato in: ${folderPath}`);
+    safeSendMessage(win, `✅ File CSV salvato in: ${folderPath}`);
     // Restituisce i dati estratti come array
     return csvData;
   } catch (error) {
-    if (win && win.webContents) win.webContents.send('status', `❌ Errore: ${error.message || error}`);
+    safeSendMessage(win, `❌ Errore: ${error.message || error}`);
   }
 } 
 

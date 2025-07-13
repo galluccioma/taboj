@@ -7,6 +7,7 @@ import path from 'path';
 import axios from 'axios';
 import { XMLParser } from 'fast-xml-parser';
 import { stopFlag, launchBrowser } from '../utils/config';
+import { safeSendMessage } from '../utils/safeWindow.js';
 
 puppeteer.use(StealthPlugin());
 stopFlag.value = false;
@@ -39,7 +40,7 @@ async function getUrlsFromSitemap(sitemapUrl, win) {
 
     for (const sm of sitemaps) {
       const subUrl = sm.loc;
-      if (win?.webContents) win.webContents.send('status', `[info] Scarico sub-sitemap: ${subUrl}`);
+      if (win?.webContents) safeSendMessage(win, 'status', `[info] Scarico sub-sitemap: ${subUrl}`);
       const subUrls = await getUrlsFromSitemap(subUrl, win);
       allUrls = allUrls.concat(subUrls);
     }
@@ -85,7 +86,7 @@ async function downloadAllMediaFromHtml({ html, url, cleanTitle, mediaFolder, wi
   const baseUrl = new URL(url);
   if (!fs.existsSync(mediaFolder)) fs.mkdirSync(mediaFolder, { recursive: true });
   if (allMedia.length === 0) {
-    if (win?.webContents) win.webContents.send('status', `[media] Nessun media trovato nella pagina: ${url}`);
+    if (win?.webContents) safeSendMessage(win, 'status', `[media] Nessun media trovato nella pagina: ${url}`);
     console.log(`[media] Nessun media trovato nella pagina: ${url}`);
   }
   for (let i = 0; i < allMedia.length; i++) {
@@ -98,15 +99,15 @@ async function downloadAllMediaFromHtml({ html, url, cleanTitle, mediaFolder, wi
       const ext = path.extname(mediaUrl).split('?')[0] || '';
       const filename = `${sanitizeFilename(cleanTitle)}_${i}${ext}`;
       const filePath = path.join(mediaFolder, filename);
-      if (win?.webContents) win.webContents.send('status', `[media] Downloading: ${mediaUrl} -> ${filePath}`);
+      if (win?.webContents) safeSendMessage(win, 'status', `[media] Downloading: ${mediaUrl} -> ${filePath}`);
       console.log(`[media] Downloading: ${mediaUrl} -> ${filePath}`);
       // Download and save
       const response = await axios.get(mediaUrl, { responseType: 'arraybuffer', timeout: 30000 });
       fs.writeFileSync(filePath, response.data);
-      if (win?.webContents) win.webContents.send('status', `📥 Media salvato: ${filePath}`);
+      if (win?.webContents) safeSendMessage(win, 'status', `📥 Media salvato: ${filePath}`);
       console.log(`[media] Saved: ${filePath}`);
     } catch (err) {
-      if (win?.webContents) win.webContents.send('status', `❌ Errore download media: ${mediaUrl} (${err.message})`);
+      if (win?.webContents) safeSendMessage(win, 'status', `❌ Errore download media: ${mediaUrl} (${err.message})`);
       console.log(`[media] Errore download media: ${mediaUrl} (${err.message})`);
     }
   }
@@ -153,7 +154,7 @@ async function screenshotAndAnalyze(url, browser, baseFolderPath, win, subFolder
   if (baseFolderPath && win) {
     desktopScreenshotPath = path.join(pageFolder, `${cleanTitle}_desktop.png`);
     await page.screenshot({ path: desktopScreenshotPath, fullPage: true });
-    win.webContents.send('status', `✅ Screenshot desktop salvato: ${desktopScreenshotPath}`);
+    safeSendMessage(win, 'status', `✅ Screenshot desktop salvato: ${desktopScreenshotPath}`);
   }
 
   // -- Screenshot mobile --
@@ -163,7 +164,7 @@ async function screenshotAndAnalyze(url, browser, baseFolderPath, win, subFolder
   if (baseFolderPath && win) {
     mobileScreenshotPath = path.join(pageFolder, `${cleanTitle}_mobile.png`);
     await page.screenshot({ path: mobileScreenshotPath, fullPage: true });
-    win.webContents.send('status', `✅ Screenshot mobile salvato: ${mobileScreenshotPath}`);
+    safeSendMessage(win, 'status', `✅ Screenshot mobile salvato: ${mobileScreenshotPath}`);
   }
 
   // Parsing html (puoi usare quello desktop o ricaricare, qui uso html desktop)
@@ -302,7 +303,7 @@ async function screenshotAndAnalyze(url, browser, baseFolderPath, win, subFolder
       trimHeaderFields: true,
     });
     fs.writeFileSync(csvPath, csv, 'utf8');
-    win.webContents.send('status', `📄 CSV salvato: ${csvPath}`);
+    safeSendMessage(win, 'status', `📄 CSV salvato: ${csvPath}`);
   }
 
   // Add file paths to the returned data
@@ -491,7 +492,7 @@ export async function performBackupSite(searchString, folderPath, win, headless 
   if (!outputFolderPath) {
     const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output'));
     outputFolderPath = path.join(baseOutput, 'backup');
-    win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${outputFolderPath}`);  
+    safeSendMessage(win, 'status', `[INFO] i file saranno salvati nella cartella: ${outputFolderPath}`);  
   }
   // Sanitize the searchString for filename/folder use
   const sanitizedQuery = searchString ? sanitizeFilename(searchString) : 'global';
@@ -503,7 +504,7 @@ export async function performBackupSite(searchString, folderPath, win, headless 
     isFullBackup = isFullBackup === 'true';
   }
   console.log('[DEBUG] fullBackup (backend, coerced):', isFullBackup, typeof isFullBackup);
-  if (win?.webContents) win.webContents.send('reset-logs');
+  if (win?.webContents) safeSendMessage(win, 'reset-logs');
   if (!fs.existsSync(outputFolderPath)) fs.mkdirSync(outputFolderPath, { recursive: true });
 
   const mediaFolder = path.join(outputFolderPath, 'media');
@@ -520,9 +521,9 @@ export async function performBackupSite(searchString, folderPath, win, headless 
           return 'https://' + u;
         });
       urlsWithSitemap = urls.map(u => ({ loc: u, sitemap: u }));
-      if (win?.webContents) win.webContents.send('status', `[info] Analisi pagine: ${urls.join(', ')}`);
+      if (win?.webContents) safeSendMessage(win, 'status', `[info] Analisi pagine: ${urls.join(', ')}`);
     }
-    if (win?.webContents) win.webContents.send('status', `[info] Trovati ${urlsWithSitemap.length} URL.`);
+    if (win?.webContents) safeSendMessage(win, 'status', `[info] Trovati ${urlsWithSitemap.length} URL.`);
 
     let proxyToUse = null;
     if (useProxy) proxyToUse = customProxy;
@@ -533,22 +534,22 @@ export async function performBackupSite(searchString, folderPath, win, headless 
 
     for (const { loc, sitemap } of urlsWithSitemap) {
       if (stopFlag.value) {
-        if (win?.webContents) win.webContents.send('status', '[STOP] Scraping interrotto dall\'utente.');
+        if (win?.webContents) safeSendMessage(win, 'status', '[STOP] Scraping interrotto dall\'utente.');
         break;
       }
       try {
         const sitemapName = path.basename(sitemap, '.xml');
         let data;
         if (isFullBackup) {
-          if (win?.webContents) win.webContents.send('status', `[progress] Backup completo: ${loc}`);
+          if (win?.webContents) safeSendMessage(win, 'status', `[progress] Backup completo: ${loc}`);
           data = await screenshotAndAnalyze(loc, browser, outputFolderPath, win, sitemapName, downloadMedia, mediaFolder);
         } else {
-          if (win?.webContents) win.webContents.send('status', `[progress] Analisi pagina: ${loc}`);
+          if (win?.webContents) safeSendMessage(win, 'status', `[progress] Analisi pagina: ${loc}`);
           data = await analyzePageForGlobalCsv(loc, browser, downloadMedia, mediaFolder, win);
         }
         allCsvData.push(data);
       } catch (err) {
-        if (win?.webContents) win.webContents.send('status', `❌ Errore su ${loc}: ${err.message}`);
+        if (win?.webContents) safeSendMessage(win, 'status', `❌ Errore su ${loc}: ${err.message}`);
       }
     }
 
@@ -565,14 +566,14 @@ export async function performBackupSite(searchString, folderPath, win, headless 
     fs.writeFileSync(globalCsvPath, globalCsv, 'utf8');
 
     if (win?.webContents) {
-      win.webContents.send('status', `🧾 CSV globale salvato: ${globalCsvPath}`);
-      win.webContents.send('status', '🧾 Tutti i report singoli sono stati salvati.');
+      safeSendMessage(win, 'status', `🧾 CSV globale salvato: ${globalCsvPath}`);
+      safeSendMessage(win, 'status', '🧾 Tutti i report singoli sono stati salvati.');
       // Send all per-page data to the renderer
-      win.webContents.send('backup-data', allCsvData);
+      safeSendMessage(win, 'backup-data', allCsvData);
       // Also send the folder path for UI actions
-      win.webContents.send('backup-folder', outputFolderPath);
+      safeSendMessage(win, 'backup-folder', outputFolderPath);
     }
   } catch (err) {
-    if (win?.webContents) win.webContents.send('status', `[errore] ${err.message}`);
+    if (win?.webContents) safeSendMessage(win, 'status', `[errore] ${err.message}`);
   }
 }

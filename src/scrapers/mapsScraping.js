@@ -8,6 +8,7 @@ import axios from 'axios';
 import { XMLParser } from 'fast-xml-parser';
 import removeDuplicates from '../utils/removeDuplicates';
 import { stopFlag, launchBrowser } from '../utils/config';
+import { safeSendMessage } from '../utils/safeWindow';
 
 puppeteer.use(StealthPlugin());
 stopFlag.value = false;
@@ -192,7 +193,7 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
     if (match) totalResults = match[1];
   } catch (_) {}
 
-  win.webContents.send('status', `📊 Risultati totali stimati: ${totalResults}`);
+  safeSendMessage(win, 'status', `📊 Risultati totali stimati: ${totalResults}`);
 
   const getPageData = async () => {
     const cards = await page.$$('div[data-test-id="organic-list-card"]');
@@ -238,7 +239,7 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
               mail = extractMail(html);
               piva = extractPiva(html);
               if (piva && /^\d{11}$/.test(piva)) {
-                win.webContents.send('status', `🔍 Verifica VIES per P.IVA: ${piva}`);
+                safeSendMessage(win, 'status', `🔍 Verifica VIES per P.IVA: ${piva}`);
                 await delay(2000); // Importante: evita blocchi dal server
                 if (stopFlag.value) break;
                 const vatData = await checkVat(piva);
@@ -246,11 +247,11 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
                 if (vatData) {
                   ragioneSociale = vatData.name;
                 } else {
-                  win.webContents.send('status', `[!] Dati VIES non trovati per ${piva}`);
+                  safeSendMessage(win, 'status', `[!] Dati VIES non trovati per ${piva}`);
                 }
                 fatturato = await extractFatturato(piva, browser);
                 if (stopFlag.value) break;
-                win.webContents.send('status', `💸 scraping FATTURATO per P.IVA: ${piva}`);
+                safeSendMessage(win, 'status', `💸 scraping FATTURATO per P.IVA: ${piva}`);
               }
             } catch (_) { if (stopFlag.value) break; }
           }
@@ -267,12 +268,12 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
             ragioneSociale,
             fatturato,
           });
-          win.webContents.send('status', `[+] (${index + 1}/${cards.length}) ${name}`);
+          safeSendMessage(win, 'status', `[+] (${index + 1}/${cards.length}) ${name}`);
           await delay(1000);
           if (stopFlag.value) break;
         }
       } catch (err) {
-        win.webContents.send('status', `[x] Errore card ${index + 1}: ${err.message}`);
+        safeSendMessage(win, 'status', `[x] Errore card ${index + 1}: ${err.message}`);
         if (stopFlag.value) break;
       }
     }
@@ -285,7 +286,7 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
         if (stopFlag.value) return;
         await getPageData();
       } catch (err) {
-        win.webContents.send('status', `[!] Errore clic pagina successiva: ${err.message}`);
+        safeSendMessage(win, 'status', `[!] Errore clic pagina successiva: ${err.message}`);
         if (stopFlag.value) return;
       }
     }
@@ -299,7 +300,7 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
 // Funzione per salvare i risultati nel CSV
 export async function saveMapsData(data, startTime, folderPath, win, searchQueries) {
   if (data.length === 0) {
-    win.webContents.send('status', '[!] Nessun dato da salvare.');
+    safeSendMessage(win, 'status', '[!] Nessun dato da salvare.');
     return;
   }
   const csv = await converter.json2csv(data);
@@ -310,8 +311,8 @@ export async function saveMapsData(data, startTime, folderPath, win, searchQueri
   if (queriesStr.length > 40) queriesStr = `${queriesStr.slice(0, 40)}...`;
   const filename = `maps_output-${queriesStr}-${Date.now()}.csv`;
   fs.writeFileSync(path.join(folderPath, filename), csv, 'utf-8');
-  win.webContents.send('status', `[+] Record salvati nel file CSV (${filename})`);
-  win.webContents.send(
+  safeSendMessage(win, 'status', `[+] Record salvati nel file CSV (${filename})`);
+  safeSendMessage(win,
     'status',
     `[success] Scritti ${data.length} record in ${(Date.now() - startTime.getTime()) / 1000}s`
   );
@@ -323,7 +324,7 @@ export async function performMapsScraping(searchString, folderPath, win, headles
   if (!folderPath) {
     const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output'));
     folderPath = path.join(baseOutput, 'maps');
-    win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);  }
+    safeSendMessage(win, 'status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);  }
   const searchQueries = searchString.split(',').map(q => q.trim()).filter(Boolean);
   let allData = [];
   let stopped = false;
@@ -333,7 +334,7 @@ export async function performMapsScraping(searchString, folderPath, win, headles
     for (const query of searchQueries) {
       if (stopFlag.value) break;
       try {
-        win.webContents.send('status', `🔍 Cercando: ${query}`);
+        safeSendMessage(win, 'status', `🔍 Cercando: ${query}`);
         const proxy = useProxy ? customProxy : null;
         browser = await launchBrowser({ headless, proxy });
         if (stopFlag.value) { await browser.close(); break; }
@@ -344,7 +345,7 @@ export async function performMapsScraping(searchString, folderPath, win, headles
         if (stopFlag.value) break;
       } catch (error) {
         if (browser) { await browser.close(); browser = null; }
-        win.webContents.send('status', `Errore durante la ricerca "${query}": ${error.message}`);
+        safeSendMessage(win, 'status', `Errore durante la ricerca "${query}": ${error.message}`);
         if (stopFlag.value) break;
       }
     }
@@ -356,12 +357,12 @@ export async function performMapsScraping(searchString, folderPath, win, headles
     allData = removeDuplicates(allData);
     const after = allData.length;
     const removed = before - after;
-    win.webContents.send('status', `[info] Rimossi ${removed} duplicati.`);
+    safeSendMessage(win, 'status', `[info] Rimossi ${removed} duplicati.`);
     await saveMapsData(allData, new Date(), folderPath, win, searchQueries);
     if (stopFlag.value) {
-      win.webContents.send('status', '[💾] Dati salvati dopo interruzione.');
+      safeSendMessage(win, 'status', '[💾] Dati salvati dopo interruzione.');
     } else {
-      win.webContents.send('status', '[✅] Dati salvati con successo.');
+      safeSendMessage(win, 'status', '[✅] Dati salvati con successo.');
     }
     stopFlag.value = false; // Reset after use
   }

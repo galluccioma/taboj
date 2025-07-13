@@ -20,6 +20,16 @@ import performMetaAdsScraping from '../src/scrapers/metaAds.js';
 import { stopFlag } from '../src/utils/config';
 // AI Analisi
 
+// Funzione helper per inviare messaggi IPC in modo sicuro
+function safeSendMessage(win: BrowserWindow | null, channel: string, ...args: any[]) {
+  if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
+    try {
+      win.webContents.send(channel, ...args);
+    } catch (error) {
+      console.log(`Errore nell'invio del messaggio ${channel}:`, error);
+    }
+  }
+}
 
 ipcMain.handle('get-assets-path', () => {
   // In produzione potresti voler usare: process.resourcesPath
@@ -116,7 +126,15 @@ app.on('window-all-closed', () => {
 // listen the channel `message` and resend the received message to the renderer process
 ipcMain.on('message', (event: IpcMainEvent, message: any) => {
   console.log(message);
-  setTimeout(() => event.sender.send('message', 'common.hiElectron'), 500);
+  setTimeout(() => {
+    try {
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('message', 'common.hiElectron');
+      }
+    } catch (error) {
+      console.log('Errore nell\'invio del messaggio:', error);
+    }
+  }, 500);
 });
 
 // IPC per inviare il nome utente
@@ -177,7 +195,7 @@ async function performScraping(
     const { headless, useProxy, customProxy, metaAdsAccessToken } = options;
     await performMetaAdsScraping(searchString, folderPath, win, headless, useProxy, customProxy, metaAdsAccessToken);
   } else {
-    win.webContents.send('status', 'Tipo di scraping non valido.');
+    safeSendMessage(win, 'status', 'Tipo di scraping non valido.');
   }
 }
 
@@ -208,7 +226,7 @@ ipcMain.handle(
       const [searchString, , folderPath, headless, useProxy, customProxy, metaAdsAccessToken] = args;
       await performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, metaAdsAccessToken });
     } else {
-      win.webContents.send('status', 'Tipo di scraping non valido.');
+      safeSendMessage(win, 'status', 'Tipo di scraping non valido.');
     }
   }
 );
@@ -584,7 +602,7 @@ function checkForUpdateAndNotify(win: BrowserWindow) {
         const release = JSON.parse(data);
         if (release.tag_name && release.tag_name.replace(/^v/, '') !== currentVersion) {
           win.webContents.once('did-finish-load', () => {
-            win.webContents.send('update-available', release.html_url);
+            safeSendMessage(win, 'update-available', release.html_url);
           });
         }
       } catch { /* ignora errori */ }

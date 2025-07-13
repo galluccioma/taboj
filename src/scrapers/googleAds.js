@@ -3,15 +3,16 @@ import { GoogleAuth } from "google-auth-library";
 import { createObjectCsvWriter } from "csv-writer";
 import fs from 'fs';
 import path from 'path';
+import { safeSendMessage } from '../utils/safeWindow.js';
 
 // Only support service account key file authentication
 async function performGoogleAdsScraping(advertiser, folderPath, win, headless, useProxy, customProxy, keyFilePath, projectId) {
   if (!keyFilePath || !fs.existsSync(keyFilePath)) {
-    if (win && win.webContents) win.webContents.send('status', `❌ Service account key file required: ${keyFilePath}`);
+    safeSendMessage(win, `❌ Service account key file required: ${keyFilePath}`);
     return;
   }
   if (!projectId) {
-    if (win && win.webContents) win.webContents.send('status', `❌ Google Project ID richiesto.`);
+    safeSendMessage(win, `❌ Google Project ID richiesto.`);
     return;
   }
 
@@ -20,7 +21,7 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
   if (!outputFolder) {
     const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : process.cwd());
     outputFolder = path.join(baseOutput, 'googleads');
-    if (win && win.webContents) win.webContents.send('status', `[INFO] i file saranno salvati nella cartella: ${outputFolder}`);
+    safeSendMessage(win, `[INFO] i file saranno salvati nella cartella: ${outputFolder}`);
   }
   if (!fs.existsSync(outputFolder)) fs.mkdirSync(outputFolder, { recursive: true });
 
@@ -30,7 +31,7 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
     scopes: ["https://www.googleapis.com/auth/bigquery"]
   });
   const client = await auth.getClient();
-  if (win && win.webContents) win.webContents.send('status', `[INFO] Autenticazione tramite service account: ${keyFilePath}`);
+  safeSendMessage(win, `[INFO] Autenticazione tramite service account: ${keyFilePath}`);
 
   try {
     const url = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries`;
@@ -132,7 +133,7 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
       ],
     });
     await csvWriter.writeRecords(simplifiedData);
-    if (win && win.webContents) win.webContents.send('status', `✅ File CSV salvato in: ${outputFolder}`);
+    safeSendMessage(win, `✅ File CSV salvato in: ${outputFolder}`);
     // Restituisce i dati estratti come array
     return simplifiedData;
   } catch (error) {
@@ -143,7 +144,7 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
       } else if (typeof error === 'object') {
         details = JSON.stringify(error, null, 2);
       }
-      win.webContents.send('status', `❌ Errore nella query: ${details}`);
+      safeSendMessage(win, `❌ Errore nella query: ${details}`);
     }
   }
 }
