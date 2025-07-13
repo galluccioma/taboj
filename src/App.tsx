@@ -25,6 +25,23 @@ function App() {
     }
   }, []);
 
+  // Notifiche aggiornamento app (autoUpdater)
+  useEffect(() => {
+    if (!window.electron || !window.electron.on) return;
+    // Aggiornamento disponibile
+    window.electron.on('update-available', (url) => {
+      window.alert('È disponibile una nuova versione di Taboj!\nVai su:\n' + url);
+    });
+    // Aggiornamento scaricato
+    window.electron.on('update-downloaded', () => {
+      window.alert('Aggiornamento scaricato! Riavvia l\'app per applicare l\'aggiornamento.');
+    });
+    // Errore aggiornamento
+    window.electron.on('update-error', (err) => {
+      window.alert('Errore durante la ricerca aggiornamenti: ' + err);
+    });
+  }, []);
+
   let formComponent;
   if (scrapingType === 'maps') {
     formComponent = <MapsScraperForm viewMode={viewMode} />;

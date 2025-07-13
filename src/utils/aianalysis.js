@@ -1,6 +1,5 @@
 // Funzione per la chat AI con HuggingFace
-const { InferenceClient } = require('@huggingface/inference');
-
+import { HfInference } from '@huggingface/inference'
 /**
  * Esegue una chat AI con HuggingFace dato uno storico di messaggi.
  * @param {Object} params
@@ -11,7 +10,7 @@ const { InferenceClient } = require('@huggingface/inference');
  */
 async function chatWithAI({ messages, aiToken, aiModel }) {
   try {
-    const client = new InferenceClient(aiToken);
+    const client = new HfInference(aiToken);
     const chatCompletion = await client.chatCompletion({
       provider: "novita",
       model: aiModel,
@@ -24,4 +23,4 @@ async function chatWithAI({ messages, aiToken, aiModel }) {
   }
 }
 
-module.exports = { chatWithAI };
+export default chatWithAI

@@ -4,6 +4,9 @@ import os from 'os';
 import fs from 'fs';
 import windowStateKeeper from 'electron-window-state';
 import { parse } from 'csv-parse/sync';
+import https from 'https';
+import chatWithAI from '../src/utils/aianalysis.js'
+
 
 // Packages
 import { BrowserWindow, app, ipcMain, IpcMainEvent, nativeTheme, dialog, shell } from 'electron';
@@ -22,6 +25,9 @@ ipcMain.handle('get-assets-path', () => {
   // In produzione potresti voler usare: process.resourcesPath
   return path.join(app.getAppPath(), 'assets');
 });
+
+// Funzione per gestire gli aggiornamenti automatici tramite electron-updater
+// RIMOSSA tutta la funzione setupAutoUpdater
 
 function createWindow() {
   // Recupera lo stato precedente della finestra o imposta i default
@@ -46,6 +52,11 @@ function createWindow() {
 
   // Associa lo stato alla finestra
   mainWindowState.manage(window);
+
+  // RIMOSSO: setupAutoUpdater(window);
+
+  // Controllo versione semplice: avvisa se c'è una nuova release
+  checkForUpdateAndNotify(window);
 
   // Resto del tuo codice...
   const port = process.env.PORT || 3000;
@@ -550,10 +561,33 @@ ipcMain.handle('get-app-settings', async () => {
   }
 });
 
-// Funzione chat AI centralizzata
-const { chatWithAI } = require('../src/utils/aianalysis.js');
-
 // IPC per chat AI conversazionale
 ipcMain.handle('ai-chat', async (_event, { messages, aiToken, aiModel }) => {
   return await chatWithAI({ messages, aiToken, aiModel });
 });
+
+/**
+ * Controlla se esiste una nuova release su GitHub e notifica l'utente.
+ */
+function checkForUpdateAndNotify(win: BrowserWindow) {
+  const currentVersion = app.getVersion();
+  const options = {
+    hostname: 'api.github.com',
+    path: '/repos/galluccioma/taboj/releases/latest',
+    headers: { 'User-Agent': 'taboj-app' }
+  };
+  https.get(options, (res) => {
+    let data = '';
+    res.on('data', (chunk) => { data += chunk; });
+    res.on('end', () => {
+      try {
+        const release = JSON.parse(data);
+        if (release.tag_name && release.tag_name.replace(/^v/, '') !== currentVersion) {
+          win.webContents.once('did-finish-load', () => {
+            win.webContents.send('update-available', release.html_url);
+          });
+        }
+      } catch { /* ignora errori */ }
+    });
+  }).on('error', () => {});
+}
