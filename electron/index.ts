@@ -4,7 +4,7 @@ import os from 'os';
 import fs from 'fs';
 import windowStateKeeper from 'electron-window-state';
 import { parse } from 'csv-parse/sync';
-import https from 'https';
+
 import chatWithAI from '../src/utils/aianalysis.js'
 
 
@@ -31,13 +31,31 @@ function safeSendMessage(win: BrowserWindow | null, channel: string, ...args: an
   }
 }
 
+// Funzione helper per ottenere la finestra principale in modo sicuro
+function getMainWindow(): BrowserWindow | null {
+  const windows = BrowserWindow.getAllWindows();
+  return windows.length > 0 ? windows[0] : null;
+}
+
+// Wrapper per operazioni asincrone che potrebbero fallire se la finestra è chiusa
+async function safeAsyncOperation<T>(operation: () => Promise<T>): Promise<T | null> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Object has been destroyed')) {
+      console.log('Operazione annullata: finestra chiusa');
+      return null;
+    }
+    throw error;
+  }
+}
+
 ipcMain.handle('get-assets-path', () => {
   // In produzione potresti voler usare: process.resourcesPath
   return path.join(app.getAppPath(), 'assets');
 });
 
-// Funzione per gestire gli aggiornamenti automatici tramite electron-updater
-// RIMOSSA tutta la funzione setupAutoUpdater
+
 
 function createWindow() {
   // Recupera lo stato precedente della finestra o imposta i default
@@ -63,10 +81,9 @@ function createWindow() {
   // Associa lo stato alla finestra
   mainWindowState.manage(window);
 
-  // RIMOSSO: setupAutoUpdater(window);
 
-  // Controllo versione semplice: avvisa se c'è una nuova release
-  checkForUpdateAndNotify(window);
+
+
 
   // Resto del tuo codice...
   const port = process.env.PORT || 3000;
@@ -84,17 +101,37 @@ function createWindow() {
 
   // For AppBar
   ipcMain.on('minimize', () => {
-    // eslint-disable-next-line no-unused-expressions
-    window.isMinimized() ? window.restore() : window.minimize();
-    // or alternatively: win.isVisible() ? win.hide() : win.show()
+    try {
+      if (window && !window.isDestroyed()) {
+        // eslint-disable-next-line no-unused-expressions
+        window.isMinimized() ? window.restore() : window.minimize();
+      }
+    } catch (error) {
+      console.log('Errore nel pulsante minimize:', error);
+    }
   });
   ipcMain.on('maximize', () => {
-    // eslint-disable-next-line no-unused-expressions
-    window.isMaximized() ? window.restore() : window.maximize();
+    try {
+      if (window && !window.isDestroyed()) {
+        // eslint-disable-next-line no-unused-expressions
+        window.isMaximized() ? window.restore() : window.maximize();
+      }
+    } catch (error) {
+      console.log('Errore nel pulsante maximize:', error);
+    }
   });
 
   ipcMain.on('close', () => {
-    window.close();
+    try {
+      if (window && !window.isDestroyed()) {
+        window.close();
+      } else {
+        app.quit();
+      }
+    } catch (error) {
+      console.log('Errore nel pulsante close:', error);
+      app.quit();
+    }
   });
 
   nativeTheme.themeSource = 'dark';
@@ -135,6 +172,23 @@ ipcMain.on('message', (event: IpcMainEvent, message: any) => {
       console.log('Errore nell\'invio del messaggio:', error);
     }
   }, 500);
+});
+
+// Protezione globale per tutti gli handler IPC
+process.on('uncaughtException', (error) => {
+  if (error.message.includes('Object has been destroyed')) {
+    console.log('Catturato errore "Object has been destroyed" - ignorato');
+    return;
+  }
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  if (reason instanceof Error && reason.message.includes('Object has been destroyed')) {
+    console.log('Catturato rejection "Object has been destroyed" - ignorato');
+    return;
+  }
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 // IPC per inviare il nome utente
@@ -204,29 +258,40 @@ ipcMain.handle(
   'start-scraping',
   async (_event, ...args) => {
     console.log('Avvio dello scraping per:', args);
-    const win = BrowserWindow.getAllWindows()[0];
+    const win = getMainWindow();
+    if (!win) {
+      console.log('Nessuna finestra disponibile per lo scraping');
+      return;
+    }
+    
     const scrapingType = args[1];
-    if (scrapingType === 'faq') {
-      // Restore positional argument passing for FAQ
-      const [searchString, , folderPath, headless, scrapeTypes, useProxy, customProxy, maxToProcess] = args;
-      await performFaqScraping(searchString, folderPath, win, headless, useProxy, customProxy, maxToProcess, scrapeTypes);
-    } else if (scrapingType === 'maps') {
-      const [searchString, , folderPath, headless, useProxy, customProxy] = args;
-      await performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy });
-    } else if (scrapingType === 'dns') {
-      const [searchString, , folderPath, , dnsRecordTypes, doAMail, doLighthouse, doWayback] = args;
-      await performScraping(searchString, scrapingType, folderPath, win, { dnsRecordTypes, doAMail, doLighthouse, doWayback });
-    } else if (scrapingType === 'backup') {
-      const [searchString, , folderPath, headless, useProxy, customProxy, fullBackup, downloadMedia] = args;
-      await performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, fullBackup, downloadMedia });
-    } else if (scrapingType === 'googleads') {
-      const [advertiser, , folderPath, headless, useProxy, customProxy, googleKeyFilePath, projectId] = args;
-      await performScraping(advertiser, scrapingType, folderPath, win, { headless, useProxy, customProxy, googleKeyFilePath, projectId });
-    } else if (scrapingType === 'metaads') {
-      const [searchString, , folderPath, headless, useProxy, customProxy, metaAdsAccessToken] = args;
-      await performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, metaAdsAccessToken });
-    } else {
-      safeSendMessage(win, 'status', 'Tipo di scraping non valido.');
+    
+    try {
+      if (scrapingType === 'faq') {
+        // Restore positional argument passing for FAQ
+        const [searchString, , folderPath, headless, scrapeTypes, useProxy, customProxy, maxToProcess] = args;
+        await safeAsyncOperation(() => performFaqScraping(searchString, folderPath, win, headless, useProxy, customProxy, maxToProcess, scrapeTypes));
+      } else if (scrapingType === 'maps') {
+        const [searchString, , folderPath, headless, useProxy, customProxy] = args;
+        await safeAsyncOperation(() => performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy }));
+      } else if (scrapingType === 'dns') {
+        const [searchString, , folderPath, , dnsRecordTypes, doAMail, doLighthouse, doWayback] = args;
+        await safeAsyncOperation(() => performScraping(searchString, scrapingType, folderPath, win, { dnsRecordTypes, doAMail, doLighthouse, doWayback }));
+      } else if (scrapingType === 'backup') {
+        const [searchString, , folderPath, headless, useProxy, customProxy, fullBackup, downloadMedia] = args;
+        await safeAsyncOperation(() => performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, fullBackup, downloadMedia }));
+      } else if (scrapingType === 'googleads') {
+        const [advertiser, , folderPath, headless, useProxy, customProxy, googleKeyFilePath, projectId] = args;
+        await safeAsyncOperation(() => performScraping(advertiser, scrapingType, folderPath, win, { headless, useProxy, customProxy, googleKeyFilePath, projectId }));
+      } else if (scrapingType === 'metaads') {
+        const [searchString, , folderPath, headless, useProxy, customProxy, metaAdsAccessToken] = args;
+        await safeAsyncOperation(() => performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, metaAdsAccessToken }));
+      } else {
+        safeSendMessage(win, 'status', 'Tipo di scraping non valido.');
+      }
+    } catch (error) {
+      console.log('Errore durante lo scraping:', error);
+      safeSendMessage(win, 'status', `Errore: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
     }
   }
 );
@@ -584,28 +649,4 @@ ipcMain.handle('ai-chat', async (_event, { messages, aiToken, aiModel }) => {
   return await chatWithAI({ messages, aiToken, aiModel });
 });
 
-/**
- * Controlla se esiste una nuova release su GitHub e notifica l'utente.
- */
-function checkForUpdateAndNotify(win: BrowserWindow) {
-  const currentVersion = app.getVersion();
-  const options = {
-    hostname: 'api.github.com',
-    path: '/repos/galluccioma/taboj/releases/latest',
-    headers: { 'User-Agent': 'taboj-app' }
-  };
-  https.get(options, (res) => {
-    let data = '';
-    res.on('data', (chunk) => { data += chunk; });
-    res.on('end', () => {
-      try {
-        const release = JSON.parse(data);
-        if (release.tag_name && release.tag_name.replace(/^v/, '') !== currentVersion) {
-          win.webContents.once('did-finish-load', () => {
-            safeSendMessage(win, 'update-available', release.html_url);
-          });
-        }
-      } catch { /* ignora errori */ }
-    });
-  }).on('error', () => {});
-}
+

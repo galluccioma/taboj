@@ -7,6 +7,25 @@ interface AppBarProps {
 }
 
 function AppBar({ viewMode, onChangeViewMode, title }: AppBarProps) {
+  // Debug: controlla se le funzioni sono disponibili
+  React.useEffect(() => {
+    const checkFunctions = () => {
+      console.log('AppBar: window.Main disponibile?', !!window.Main);
+      if (window.Main) {
+        console.log('AppBar: Close disponibile?', !!window.Main.Close);
+        console.log('AppBar: Minimize disponibile?', !!window.Main.Minimize);
+        console.log('AppBar: Maximize disponibile?', !!window.Main.Maximize);
+      }
+    };
+
+    checkFunctions();
+    
+    // Controlla periodicamente se le funzioni sono ancora disponibili
+    const interval = setInterval(checkFunctions, 10000); // ogni 10 secondi
+    
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <header className="bg-slate-800 text-white fixed top-0 mx-auto w-full flex justify-between items-center draggable z-[999]">
       {/* Controlli per windows */}
@@ -15,7 +34,19 @@ function AppBar({ viewMode, onChangeViewMode, title }: AppBarProps) {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              window.Main?.Close?.();
+              try {
+                if (window.Main && window.Main.Close) {
+                  window.Main.Close();
+                } else {
+                  console.log('Close non disponibile, tentativo fallback...');
+                  // Fallback: prova a chiudere direttamente
+                  window.close();
+                }
+              } catch (error) {
+                console.error('Errore nel pulsante Close:', error);
+                // Fallback finale
+                window.close();
+              }
             }}
             className="h-3 w-3 rounded-full bg-red-500 hover:bg-red-600"
             title="Close"
@@ -35,7 +66,15 @@ function AppBar({ viewMode, onChangeViewMode, title }: AppBarProps) {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              window.Main?.Minimize?.();
+              try {
+                if (window.Main && window.Main.Minimize) {
+                  window.Main.Minimize();
+                } else {
+                  console.log('Minimize non disponibile');
+                }
+              } catch (error) {
+                console.error('Errore nel pulsante Minimize:', error);
+              }
             }}
             className="h-3 w-3 rounded-full bg-yellow-700 hover:bg-yellow-800"
             title="Minimize"
@@ -55,7 +94,15 @@ function AppBar({ viewMode, onChangeViewMode, title }: AppBarProps) {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              window.Main?.Maximize?.();
+              try {
+                if (window.Main && window.Main.Maximize) {
+                  window.Main.Maximize();
+                } else {
+                  console.log('Maximize non disponibile');
+                }
+              } catch (error) {
+                console.error('Errore nel pulsante Maximize:', error);
+              }
             }}
             className="h-3 w-3 rounded-full bg-green-500 hover:bg-green-600"
             title="Maximize"
