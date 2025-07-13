@@ -162,7 +162,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
       <div className="mb-4">
         <span className="flex mb-2 font-semibold w-full justify-between">
           Token HuggingFace AI{' '}
-          <a href="https://huggingface.co/settings/tokens" target="blank">
+          <a className="hover:underline"href="https://huggingface.co/settings/tokens" target="blank">
             🔑 Ottieni il tuo token AI
           </a>
         </span>
@@ -187,7 +187,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
       <div className="mb-4">
         <span className="flex w-full mb-2 font-semibold justify-between">
           Percorso file chiave Google Service Account (JSON){' '}
-          <a href="https://console.cloud.google.com/apis/api/bigquery.googleapis.com" target="blank">
+          <a className="hover:underline"href="https://console.cloud.google.com/apis/api/bigquery.googleapis.com" target="blank">
             🔑 Ottieni la tua chiave Google
           </a>
         </span>
@@ -220,7 +220,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
         />
       </div>
       <div className="mb-4">
-        <span className="flex w-full mb-2 font-semibold justify-between">Meta API Key <a href="https://www.facebook.com/ads/library/api" target="blank">
+        <span className="flex w-full mb-2 font-semibold justify-between">Meta API Key <a className="hover:underline"href="https://www.facebook.com/ads/library/api" target="blank">
               🔑 Ottieni la tua chiave Meta
             </a></span>
           <input
