@@ -1,3 +1,4 @@
+import { ChevronLeft } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react';
 import Footer from '../components/Footer';
 import SiteBackupDashboard from './SiteBackupDashboard';
@@ -20,17 +21,17 @@ function BackupFolderList({ folders, onView, onDelete, onOpen, loading }: any) {
           <li key={folder.folder} className="py-2 flex items-center justify-between">
             <span className="truncate max-w-xs font-semibold">{folder.folder}</span>
             <div className="flex gap-2">
+            <button
+                className="px-3 py-1 hover:bg-slate-800 text-white rounded"
+                onClick={() => onOpen(folder.folderPath)}
+              >
+                Apri cartella
+              </button>
               <button
                 className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded "
                 onClick={() => onView(`${folder.folderPath}/${globalCsv}`)}
               >
                 Vedi
-              </button>
-              <button
-                className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
-                onClick={() => onOpen(folder.folderPath)}
-              >
-                Apri cartella
               </button>
               <button
                 className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
@@ -53,7 +54,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
   const [statusMessages, setStatusMessages] = useState<string[]>([]);
   const [fullBackup, setFullBackup] = useState(false);
   const statusRef = useRef<HTMLDivElement>(null);
-  const [backupPages, setBackupPages] = useState<any[]>([]);
+  // const [backupPages, setBackupPages] = useState<any[]>([]); // Removed unused state
   const [selectedPage, setSelectedPage] = useState<any | null>(null);
   const [backupFolders, setBackupFolders] = useState<any[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
@@ -87,8 +88,8 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
       });
     }
     if (window.electron && window.electron.on) {
-      window.electron.on('backup-data', (data: any[]) => {
-        setBackupPages(data);
+      window.electron.on('backup-data', () => {
+        // setBackupPages(data); // Removed unused state
         setSelectedPage(null);
       });
     }
@@ -159,23 +160,8 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
   const handleViewCsv = async (file: string) => {
     if (window.electron && window.electron.invoke) {
       const data = await window.electron.invoke('read-backup-csv', file);
-      setBackupPages([data]);
+      // setBackupPages([data]); // Removed unused state
       setSelectedPage(data);
-    }
-  };
-
-  const handleDeleteCsv = async (file: string) => {
-    if (window.electron && window.electron.invoke) {
-      await window.electron.invoke('delete-backup-files', [file]);
-      setBackupFolders((folders) =>
-        folders.map((f) =>
-          f.folder === f.folder ? { ...f, files: f.files.filter((fName: string) => fName !== file) } : f
-        )
-      );
-      if (selectedPage && selectedPage.csvPath === file) {
-        setSelectedPage(null);
-        setBackupPages([]);
-      }
     }
   };
 
@@ -235,27 +221,28 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
             folders={backupFolders}
             loading={loadingFiles}
             onView={handleViewCsv}
-            onDelete={async (folderPath: string) => {
+            onDelete={async (folderPathToDelete: string) => {
               if (window.electron && window.electron.invoke) {
-                await window.electron.invoke('delete-backup-folder', folderPath);
-                setBackupFolders((folders) => folders.filter((f) => f.folderPath !== folderPath));
+                await window.electron.invoke('delete-backup-folder', folderPathToDelete);
+                setBackupFolders((folders) => folders.filter((f) => f.folderPath !== folderPathToDelete));
               }
             }}
-            onOpen={async (folderPath: string) => {
+            onOpen={async (folderPathToOpen: string) => {
               if (window.electron && window.electron.invoke) {
-                await window.electron.invoke('open-backup-folder', folderPath);
+                await window.electron.invoke('open-backup-folder', folderPathToOpen);
               }
             }}
           />
         </section>
       )}
       {selectedPage && viewMode === 'dashboard' && (
-        <section className="bg-slate-800 rounded shadow p-4 mt-6">
+        <div>
           <div className="flex justify-between items-center mb-4">
-            <button
-              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
+          <button
+              className="flex px-3 py-1 hover:bg-slate-900 text-white rounded"
               onClick={() => setSelectedPage(null)}
             >
+              <ChevronLeft/>
               Torna alla lista
             </button>
             <button
@@ -272,7 +259,7 @@ function SiteBackup({ viewMode = 'scraping' }: SiteBackupProps) {
           ) : (
             <SiteBackupDashboard data={selectedPage} />
           )}
-        </section>
+        </div>
       )}
       {viewMode === 'scraping' && (
         <Footer statusRef={statusRef} statusMessages={statusMessages} handleContinueCaptcha={handleContinueCaptcha} />

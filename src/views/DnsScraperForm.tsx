@@ -5,6 +5,7 @@ import CsvFileList from './CsvFileList';
 import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
 import Buttons from '../components/Buttons';
+import { ChevronLeft } from 'lucide-react';
 
 function DnsScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
@@ -229,27 +230,11 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
       )}
       {selectedPage && viewMode === 'dashboard' && (
         <section className="bg-slate-800 rounded shadow p-4 mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <button
-              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
-              onClick={() => setSelectedPage(null)}
-            >
-              Torna alla lista
-            </button>
-            <button
-              className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded "
-              onClick={() => setShowRaw((r) => !r)}
-            >
-              {showRaw ? 'Vista Formattata' : 'Vista JSON'}
-            </button>
-          </div>
-          {showRaw ? (
-            <pre className="break-words whitespace-pre-wrap bg-slate-900 text-white p-4 rounded overflow-x-auto">
-              {JSON.stringify(selectedPage, null, 2)}
-            </pre>
-          ) : (
-            <Dashboard data={selectedPage} csvPath={currentCsvPath} />
-          )}
+          <Dashboard
+            data={selectedPage}
+            csvPath={currentCsvPath}
+            onBack={() => setSelectedPage(null)}
+          />
         </section>
       )}
       {viewMode === 'scraping' && (

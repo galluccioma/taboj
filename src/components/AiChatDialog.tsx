@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 
-const AiChatDialog = ({
-  open,
-  onClose,
-  context,
-}: {
-  open: boolean;
-  onClose: () => void;
-  context?: string | object;
-}) => {
-  const systemPrompt = 'Sei un assistente AI che aiuta ad analizzare e spiegare file CSV e JSON per agenzie di Marketing';
+/**
+ * Dialog per la chat AI integrata.
+ * Props:
+ * - open: boolean (se la dialog è visibile)
+ * - onClose: funzione per chiudere la dialog
+ * - context: string | object (opzionale, contesto da passare come system message)
+ * - chatId: string (opzionale, identificatore unico per la sessione chat)
+ */
+const AiChatDialog = ({ open, onClose, context, chatId }: { open: boolean; onClose: () => void; context?: string | object; chatId?: string }) => {
+  const systemPrompt = 'Sei un assistente AI per un agenzia di Web e Digital Marketing che aiuta ad analizzare e spiegare file CSV e JSON relativi a clienti o potenziali clienti';
   const contextText = context
     ? `\nContesto:\n${typeof context === 'string' ? context : JSON.stringify(context, null, 2)}`
     : '';
@@ -78,7 +78,7 @@ const AiChatDialog = ({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div
-        className="bg-slate-800 p-6 rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col"
+        className="bg-slate-800 p-6 rounded shadow-2xl w-full max-w-4xl flex flex-col"
         style={{ maxHeight: '90vh' }}
       >
         <div className="flex justify-between items-center mb-2">

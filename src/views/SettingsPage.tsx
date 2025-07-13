@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSettings } from '../components/SettingsContext';
+import { ChevronLeft } from 'lucide-react';
 
 interface SettingsPageProps {
   onBack?: () => void;
@@ -11,7 +12,8 @@ function SettingsPage({ onBack }: SettingsPageProps) {
   const [error, setError] = useState('');
   const [aiToken, setAiToken] = useState('');
   const [aiModel, setAiModel] = useState('meta-llama/Llama-3.2-3B-Instruct');
-  const { googleServiceAccountKeyPath, setGoogleServiceAccountKeyPath, googleProjectId, setGoogleProjectId } = useSettings();
+  const { googleServiceAccountKeyPath, setGoogleServiceAccountKeyPath, googleProjectId, setGoogleProjectId } =
+    useSettings();
   const { metaAdsAccessToken, setMetaAdsAccessToken } = useSettings();
 
   const { useProxy, setUseProxy, customProxy, setCustomProxy, headless, setHeadless } = useSettings();
@@ -61,7 +63,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
         try {
           await (window.electron as any).invoke('save-app-settings', {
             aiToken,
-            aiModel,
+            aiModel
             // puoi aggiungere qui altre impostazioni se vuoi
           });
         } catch (e) {
@@ -73,13 +75,15 @@ function SettingsPage({ onBack }: SettingsPageProps) {
       setError('Errore nel salvataggio della cartella.');
     }
     setSaving(false);
-    alert("Cartella aggiornata con successo");
+    alert('Cartella aggiornata con successo');
   };
 
   // Selettore file per Google Service Account Key
   const handleChooseGoogleKeyFile = async () => {
     if (window.electron && (window.electron as any).invoke) {
-      const filePath = await (window.electron as any).invoke('choose-file', { filters: [{ name: 'JSON', extensions: ['json'] }] });
+      const filePath = await (window.electron as any).invoke('choose-file', {
+        filters: [{ name: 'JSON', extensions: ['json'] }]
+      });
       if (filePath) setGoogleServiceAccountKeyPath(filePath);
     } else if (window.electron && window.electron.chooseFolder) {
       const path = await window.electron.chooseFolder();
@@ -90,10 +94,8 @@ function SettingsPage({ onBack }: SettingsPageProps) {
   return (
     <div className=" mx-auto p-8 mt-8 bg-slate-800 rounded shadow text-white">
       {onBack && (
-        <button
-          className="mb-4 px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
-          onClick={onBack}
-        >
+        <button className="flex mb-4 px-3 py-1 hover:bg-slate-900 text-white rounded" onClick={onBack}>
+          <ChevronLeft />
           Indietro
         </button>
       )}
@@ -127,7 +129,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
             type="checkbox"
             id="useProxyCheckbox"
             checked={useProxy}
-            onChange={e => setUseProxy(e.target.checked)}
+            onChange={(e) => setUseProxy(e.target.checked)}
             className="mr-2"
           />
           <span>Abilita proxy</span>
@@ -139,7 +141,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
             className="input w-full px-3 py-2 border rounded text-black"
             placeholder="Proxy personalizzato (es: http://ip:porta)"
             value={customProxy}
-            onChange={e => setCustomProxy(e.target.value)}
+            onChange={(e) => setCustomProxy(e.target.value)}
           />
         )}
       </div>
@@ -151,7 +153,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
             type="checkbox"
             id="headlessCheckbox"
             checked={headless}
-            onChange={e => setHeadless(e.target.checked)}
+            onChange={(e) => setHeadless(e.target.checked)}
             className="mr-2"
           />
           <span>Rimuovi la spunta solo in caso di problemi</span>
@@ -163,7 +165,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
           type="text"
           className="input w-full px-3 py-2 border rounded text-black"
           value={aiToken}
-          onChange={e => setAiToken(e.target.value)}
+          onChange={(e) => setAiToken(e.target.value)}
           placeholder="hf_..."
         />
       </div>
@@ -173,7 +175,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
           type="text"
           className="input w-full px-3 py-2 border rounded text-black"
           value={aiModel}
-          onChange={e => setAiModel(e.target.value)}
+          onChange={(e) => setAiModel(e.target.value)}
           placeholder="meta-llama/Llama-3.2-3B-Instruct"
         />
       </div>
@@ -184,7 +186,7 @@ function SettingsPage({ onBack }: SettingsPageProps) {
             type="text"
             className="input flex-1 px-3 py-2 border rounded text-black"
             value={googleServiceAccountKeyPath}
-            onChange={e => setGoogleServiceAccountKeyPath(e.target.value)}
+            onChange={(e) => setGoogleServiceAccountKeyPath(e.target.value)}
             placeholder="/percorso/file/chiave.json"
             readOnly
           />
@@ -195,6 +197,11 @@ function SettingsPage({ onBack }: SettingsPageProps) {
           >
             Scegli File
           </button>
+          <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-slate-800 rounded">
+            <a href="https://console.cloud.google.com/apis/api/bigquery.googleapis.com" target="blank">
+              🔑 Ottieni la tua chiave Google
+            </a>
+          </button>
         </div>
       </div>
       <div className="mb-4">
@@ -203,19 +210,26 @@ function SettingsPage({ onBack }: SettingsPageProps) {
           type="text"
           className="input w-full px-3 py-2 border rounded text-black"
           value={googleProjectId}
-          onChange={e => setGoogleProjectId(e.target.value)}
+          onChange={(e) => setGoogleProjectId(e.target.value)}
           placeholder="Google Cloud Project ID"
         />
       </div>
       <div className="mb-4">
         <span className="block mb-2 font-semibold">Meta API Key</span>
+        <div className='flex items-center gap-2'>
         <input
           type="text"
           className="input w-full px-3 py-2 border rounded text-black"
           value={metaAdsAccessToken}
-          onChange={e => setMetaAdsAccessToken(e.target.value)}
+          onChange={(e) => setMetaAdsAccessToken(e.target.value)}
           placeholder="Meta API Key"
         />
+        <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-slate-800 rounded">
+          <a href="https://www.facebook.com/ads/library/api" target="blank">
+            🔑 Ottieni la tua chiave Meta
+          </a>
+        </button>
+        </div>
       </div>
       <button
         className="btn px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
@@ -229,4 +243,4 @@ function SettingsPage({ onBack }: SettingsPageProps) {
   );
 }
 
-export default SettingsPage; 
+export default SettingsPage;

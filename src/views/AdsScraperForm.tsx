@@ -5,6 +5,7 @@ import ChooseFolder from '../components/ChoseFolder';
 import { useSettings } from '../components/SettingsContext';
 import Dashboard from './Dashboard';
 import Buttons from '../components/Buttons';
+import { ChevronLeft } from 'lucide-react';
 
 function AdsScraperForm({ viewMode = 'scraping' }) {
   const [username, setUsername] = useState('Utente');
@@ -191,45 +192,11 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
                   placeholder="Nome inserzionista"
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-sm mb-1" htmlFor="google-projectid-input">
-                  Google Project ID
-                </label>
-                <input
-                  id="google-projectid-input"
-                  type="text"
-                  className="input w-full px-3 py-2 border rounded text-black"
-                  value={googleProjectId}
-                  onChange={e => setGoogleProjectId(e.target.value)}
-                  placeholder="Google Cloud Project ID"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm mb-1" htmlFor="google-keyfile-input">
-                  Percorso file chiave Google Service Account (JSON)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="google-keyfile-input"
-                    type="text"
-                    className="input flex-1 px-3 py-2 border rounded text-black"
-                    value={googleServiceAccountKeyPath}
-                    readOnly
-                  />
-                  <button
-                    className="btn px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
-                    onClick={handleChooseKeyFile}
-                    type="button"
-                  >
-                    Scegli File
-                  </button>
-                </div>
-              </div>
-              <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-white rounded">
-                <a href="https://console.cloud.google.com/apis/api/bigquery.googleapis.com" target="blank">
-                  🔑 Ottieni la tua chiave
-                </a>
+              <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-slate-800 rounded">
+              <a href='https://adstransparency.google.com' target='blank'>
+                Trova il nome inserzionista Google</a>
               </button>
+             
             </>
           )}
           {adType === 'meta' && (
@@ -250,23 +217,9 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
                   placeholder="ID Pagina Facebook"
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-sm mb-1" htmlFor="meta-api-key-input">
-                  Meta API Key
-                </label>
-                <input
-                  id="meta-api-key-input"
-                  type="text"
-                  className="input w-full px-3 py-2 border rounded text-black"
-                  value={metaAdsAccessToken}
-                  onChange={(e) => setMetaAdsAccessToken(e.target.value)}
-                  placeholder="Meta API Key"
-                />
-              </div>
-              <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-white rounded">
-                <a href="https://www.facebook.com/ads/library/api" target="blank">
-                  🔑 Ottieni la tua chiave
-                </a>
+              <button className="btn px-4 py-2 bg-yellow-700 hover:bg-yellow-800 text-slate-800 rounded">
+              <a href='https://www.facebook.com/ads/library' target='blank'>
+                Trova l'ID della pagina facebook</a>
               </button>
             </>
           )}
@@ -282,27 +235,11 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
       )}
       {selectedPage && viewMode === 'dashboard' && (
         <section className="bg-slate-800 rounded shadow p-4 mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <button
-              className="px-3 py-1 bg-yellow-700 hover:bg-yellow-800 text-white rounded"
-              onClick={() => setSelectedPage(null)}
-            >
-              Torna alla lista
-            </button>
-            <button
-              className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded"
-              onClick={() => setShowRaw((r) => !r)}
-            >
-              {showRaw ? 'Vista Formattata' : 'Vista JSON'}
-            </button>
-          </div>
-          {showRaw ? (
-            <pre className="break-words whitespace-pre-wrap bg-slate-900 text-white p-4 rounded overflow-x-auto">
-              {JSON.stringify(selectedPage, null, 2)}
-            </pre>
-          ) : (
-            <Dashboard data={Array.isArray(selectedPage) ? selectedPage : [selectedPage]} csvPath={currentCsvPath} />
-          )}
+          <Dashboard
+            data={Array.isArray(selectedPage) ? selectedPage : [selectedPage]}
+            csvPath={currentCsvPath}
+            onBack={() => setSelectedPage(null)}
+          />
         </section>
       )}
       {viewMode === 'scraping' && (
