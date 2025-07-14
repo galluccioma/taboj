@@ -7,6 +7,7 @@ import AskScraperForm from './views/AskScraperForm';
 import SiteBackup from './views/SiteBackup';
 import SettingsPage from './views/SettingsPage';
 import AdsScraperForm from './views/AdsScraperForm';
+import Dashboard from './views/Dashboard';
 import { SettingsProvider } from './components/SettingsContext';
 import { ScrapingProvider } from './components/ScrapingContext';
 
@@ -18,6 +19,14 @@ function App() {
   const [lastViewMode, setLastViewMode] = useState(viewMode);
   // Sidebar open state for desktop layout
   // (Sidebar manages its own open state, but we need to add left padding to content)
+
+  // Stato per mostrare la dashboard dopo lo scraping
+  const [dashboardData, setDashboardData] = useState<any[] | null>(null);
+  const [dashboardCsvPath, setDashboardCsvPath] = useState<string>('');
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [dashboardQuickActionsState, setDashboardQuickActions] = useState<{ label: string; prompt: string }[]>([]);
+
+  // Rimuovi dashboardQuickActions e scrapingType dal render
 
   useEffect(() => {
     if (window.Main) {
@@ -39,6 +48,14 @@ function App() {
   } else if (scrapingType === 'googleads') {
     formComponent = <AdsScraperForm viewMode={viewMode} />;
   }
+
+  // handleScrapingComplete ora accetta anche le quickActions
+  const handleScrapingComplete = (data: any[], csvPath: string, quickActions: { label: string; prompt: string }[]) => {
+    setDashboardData(data);
+    setDashboardCsvPath(csvPath);
+    setShowDashboard(true);
+    setDashboardQuickActions(quickActions);
+  };
 
   const handleOpenSettings = () => {
     setLastScrapingType(scrapingType);
@@ -75,7 +92,19 @@ function App() {
             <Sidebar selectedType={showSettings ? 'settings' : scrapingType} onChangeType={handleChangeType} onOpenSettings={handleOpenSettings}
             />
             <main className="w-full sm:max-w-3xl max-w-5xl xl:max-w-7xl p-16 mx-auto h-full ">
-              {showSettings ? <SettingsPage onBack={handleCloseSettings} /> : formComponent}
+              {showSettings ? (
+                <SettingsPage onBack={handleCloseSettings} />
+              ) : showDashboard && dashboardData ? (
+                <Dashboard
+                  data={dashboardData}
+                  csvPath={dashboardCsvPath}
+                  quickActions={dashboardQuickActionsState}
+                  onBack={() => setShowDashboard(false)}
+                />
+              ) : (
+                // Passa handleScrapingComplete come prop ai tuoi ScraperForm
+                React.cloneElement(formComponent as React.ReactElement<any>, { onScrapingComplete: handleScrapingComplete })
+              )}
             </main>
           </div>
         </div>

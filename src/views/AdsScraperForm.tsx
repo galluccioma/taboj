@@ -242,6 +242,14 @@ function AdsScraperForm({ viewMode = 'scraping' }) {
             data={Array.isArray(selectedPage) ? selectedPage : [selectedPage]}
             csvPath={currentCsvPath}
             onBack={() => setSelectedPage(null)}
+            quickActions={adType === 'google' ? [
+              { label: 'Trova 10 keyword ricorrenti', prompt: 'Trova le 10 keyword più ricorrenti in questi dati.' },
+              { label: 'Riepilogo sintetico', prompt: 'Fornisci un riepilogo sintetico dei dati.' },
+              { label: 'Trova anomalie', prompt: 'Trova eventuali anomalie o valori fuori scala nei dati.' }
+            ] : [
+              { label: 'Trova inserzionista più attivo', prompt: 'Qual è l\'inserzionista più attivo nei dati Meta Ads?' },
+              { label: 'Riepilogo Meta Ads', prompt: 'Fornisci un riepilogo sintetico dei dati Meta Ads.' }
+            ]}
           />
         </section>
       )}

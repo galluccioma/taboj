@@ -252,6 +252,10 @@ function DnsScraperForm({ viewMode = 'scraping' }) {
             data={selectedPage}
             csvPath={currentCsvPath}
             onBack={() => setSelectedPage(null)}
+            quickActions={[
+              { label: 'Trova domini con errori', prompt: 'Quali domini presentano errori DNS?' },
+              { label: 'Riepilogo DNS', prompt: 'Fornisci un riepilogo dei record DNS.' }
+            ]}
           />
         </section>
       )}

@@ -196,6 +196,10 @@ function MapsScraperForm({ viewMode = 'scraping' }: MapsScraperFormProps) {
             data={selectedPage}
             csvPath={currentCsvPath}
             onBack={() => setSelectedPage(null)}
+            quickActions={[
+              { label: 'Trova città più ricorrente', prompt: 'Qual è la città più ricorrente nei dati?' },
+              { label: 'Riepilogo', prompt: 'Fornisci un riepilogo sintetico dei dati delle mappe.' }
+            ]}
           />
         </section>
       )}

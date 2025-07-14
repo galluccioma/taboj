@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import getStatusColor from '../utils/getStatusColor';
 import AiChatDialog from '../components/AiChatDialog';
+import { BotMessageSquare } from 'lucide-react';
 
 function getTitleColor(
   title: string,
@@ -31,7 +32,7 @@ function SiteBackupDashboard({ data }: { data: Record<string, any>[] }) {
           className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-sm font-medium"
           onClick={() => setShowAiChat(true)}
         >
-          Chatta con AI
+          <BotMessageSquare/> Chatta con AI
         </button>
       </div>
       <div className="space-y-8">
@@ -83,10 +84,10 @@ function SiteBackupDashboard({ data }: { data: Record<string, any>[] }) {
               <div>
                 <strong>Titoli & Consigli:</strong>
                 <ul className="ml-2 list-disc">
-                  {titles.map((titolo: string) => (
+                {titles.map((titolo: string, i: number) => (
                     <li
-                      key={titolo.trim()}
-                      className={getTitleColor(titolo)}
+                    key={titolo.trim() + '-' + i}
+                    className={getTitleColor(titolo)}
                     >
                       {titolo.trim()}
                     </li>
@@ -120,7 +121,10 @@ function SiteBackupDashboard({ data }: { data: Record<string, any>[] }) {
         })}
       </div>
       {/* Dialog per la chat AI */}
-      <AiChatDialog open={showAiChat} onClose={() => setShowAiChat(false)} context={data} chatId={chatId} />
+      <AiChatDialog open={showAiChat} onClose={() => setShowAiChat(false)} context={data} chatId={chatId} quickActions={[
+        { label: 'Analisi SEO', prompt: 'Forniscimi un riepilogo sintetico con focus sulla SEO' },
+        { label: 'Keyword più frequenti', prompt: 'Forniscimi una lista delle 10 parole più frequenti presenti tra descrizioni, titoli e keywords.' }
+      ]} />
     </section>
   );
 }

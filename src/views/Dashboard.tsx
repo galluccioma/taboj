@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Filter, EyeOff, RotateCcw, ChevronUp, ChevronDown, ChevronLeft } from 'lucide-react';
+import { Filter, EyeOff, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, BotMessageSquare } from 'lucide-react';
 import AiChatDialog from '../components/AiChatDialog';
 
 /**
@@ -8,8 +8,9 @@ import AiChatDialog from '../components/AiChatDialog';
  * - data: array di record da mostrare
  * - csvPath: percorso CSV (opzionale, per chatId)
  * - onBack: funzione opzionale per tornare alla lista
+ * - quickActions: azioni rapide per la chat AI (opzionale)
  */
-function Dashboard({ data, csvPath, onBack }: { data: Record<string, any>[]; csvPath?: string; onBack?: () => void }) {
+function Dashboard({ data, csvPath, onBack, quickActions }: { data: Record<string, any>[]; csvPath?: string; onBack?: () => void; quickActions?: { label: string; prompt: string }[] }) {
   if (!data || !Array.isArray(data) || data.length === 0) {
     return (
       <div className="text-center py-12">
@@ -88,7 +89,7 @@ function Dashboard({ data, csvPath, onBack }: { data: Record<string, any>[]; csv
             <button
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-sm font-medium"
               onClick={() => setShowAiChat(true)}
-            >
+            >  <BotMessageSquare/>
               Chatta con AI
             </button>
             {hiddenCols.length > 0 && (
@@ -180,7 +181,13 @@ function Dashboard({ data, csvPath, onBack }: { data: Record<string, any>[]; csv
             </div>
           )}
           {/* Dialog per la chat AI */}
-          <AiChatDialog open={showAiChat} onClose={() => setShowAiChat(false)} context={data} chatId={csvPath || 'default'} />
+          <AiChatDialog 
+            open={showAiChat} 
+            onClose={() => setShowAiChat(false)} 
+            context={data} 
+            chatId={csvPath || 'default'}
+            quickActions={quickActions}
+          />
         </>
       )}
     </div>
