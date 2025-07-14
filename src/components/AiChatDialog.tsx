@@ -8,10 +8,17 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
  * - context: string | object (opzionale, contesto da passare come system message)
  * - chatId: string (opzionale, identificatore unico per la sessione chat)
  */
-const AiChatDialog = ({ open, onClose, context, chatId }: { open: boolean; onClose: () => void; context?: string | object; chatId?: string }) => {
-  const systemPrompt = 'Sei un assistente AI per un agenzia di Web e Digital Marketing che aiuta ad analizzare e spiegare file CSV e JSON relativi a clienti o potenziali clienti';
+type AiChatDialogProps = {
+  open: boolean;
+  onClose: () => void;
+  context?: string | object;
+  chatId?: string;
+};
+
+function AiChatDialog({ open, onClose, context, chatId }: AiChatDialogProps) {
+  const systemPrompt = 'Sei un assistente AI esperto in Web e Digital Marketing. Lavori per una agenzia che aiuta i propri clienti ad analizzare e interpretare dati provenienti da file CSV o JSON relativi a clienti attuali o potenziali. Il tuo compito è fornire analisi chiare, sintetiche e utili, anche a interlocutori non tecnici.'
   const contextText = context
-    ? `\nContesto:\n${typeof context === 'string' ? context : JSON.stringify(context, null, 2)}`
+    ? `\nHai ricevuto il seguente contesto aziendale:':\n${typeof context === 'string' ? context : JSON.stringify(context, null, 2)}`
     : '';
 
   const initialSystemMessage = useMemo(() => {

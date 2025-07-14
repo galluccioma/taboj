@@ -1,6 +1,6 @@
 {
   "name": "taboj",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "license": "MIT",
   "main": "dist-electron/index.js",
   "author": {
@@ -22,7 +22,7 @@
     "build:electron": "tsc -p electron",
     "dist": "npm run build && electron-builder",
     "dist:win": "npm run build && electron-builder --win",
-    "dist:mac": "npm run build && electron-builder --mac ",
+    "dist:mac": "npm run build && electron-builder --mac --publish always ",
     "dist:mac-legacy": "npm run build && electron-builder --mac --x64 --publish always",
     "dist:linux": "npm run build && electron-builder --linux",
     "publish": "npm run clean && npm run build && npm run dist:mac && npm run dist:mac-legacy",
