@@ -247,14 +247,6 @@ function AskScraperForm({ viewMode = 'scraping' }) {
             data={selectedPage}
             csvPath={currentCsvPath}
             onBack={() => setSelectedPage(null)}
-            quickActions={[
-              { label: 'Domande frequenti', prompt: 'Quali sono le domande più frequenti?' },
-              { label: 'Riepilogo FAQ', prompt: 'Fornisci un riepilogo sintetico delle FAQ.' },
-              { label: 'Keyword più frequenti', prompt: 'Forniscimi una lista delle 10 parole più frequenti presenti tra descrizioni, titoli e keywords.' },
-              { label: 'Piano Editoriale', prompt: 'Forniscimi un piano editoriale per social meta (instagram e facebook) e articoli blog sulla base delle ricerche correlate o delle faq presenti nel json' }
-
-
-            ]}
           />
         </section>
       )}

@@ -7,6 +7,24 @@ interface AppBarProps {
 }
 
 function AppBar({ viewMode, onChangeViewMode, title }: AppBarProps) {
+  // Debug: controlla se le funzioni sono disponibili
+  React.useEffect(() => {
+    const checkFunctions = () => {
+      console.log('AppBar: window.Main disponibile?', !!window.Main);
+      if (window.Main) {
+        console.log('AppBar: Close disponibile?', !!window.Main.Close);
+        console.log('AppBar: Minimize disponibile?', !!window.Main.Minimize);
+        console.log('AppBar: Maximize disponibile?', !!window.Main.Maximize);
+      }
+    };
+
+    checkFunctions();
+    
+    // Controlla periodicamente se le funzioni sono ancora disponibili
+    const interval = setInterval(checkFunctions, 10000); // ogni 10 secondi
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <header className="bg-slate-800 text-white fixed top-0 mx-auto w-full flex justify-between items-center draggable z-[999]">

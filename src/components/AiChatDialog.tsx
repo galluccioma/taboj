@@ -1,6 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import {BotMessageSquare} from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 
 /**
  * Dialog per la chat AI integrata.
@@ -9,19 +7,16 @@ import ReactMarkdown from 'react-markdown';
  * - onClose: funzione per chiudere la dialog
  * - context: string | object (opzionale, contesto da passare come system message)
  * - chatId: string (opzionale, identificatore unico per la sessione chat)
- * - quickActions: array di azioni rapide [{ label, prompt }]
  */
-type QuickAction = { label: string; prompt: string };
 type AiChatDialogProps = {
   open: boolean;
   onClose: () => void;
   context?: string | object;
   chatId?: string;
-  quickActions?: QuickAction[];
 };
 
-function AiChatDialog({ open, onClose, context, chatId, quickActions }: AiChatDialogProps) {
-  const systemPrompt = 'Sei un assistente AI esperto in Web e Digital Marketing, creazione di Contenuti e SEO. Lavori per una agenzia che aiuta i propri clienti ad analizzare e interpretare dati provenienti da file JSON relativi a clienti attuali o potenziali. Il tuo compito è fornire analisi chiare, sintetiche e utili, anche a interlocutori non tecnici. Fornisci sempre risposte in formato markdown che siano concise e comprensibili.'
+function AiChatDialog({ open, onClose, context, chatId }: AiChatDialogProps) {
+  const systemPrompt = 'Sei un assistente AI esperto in Web e Digital Marketing. Lavori per una agenzia che aiuta i propri clienti ad analizzare e interpretare dati provenienti da file CSV o JSON relativi a clienti attuali o potenziali. Il tuo compito è fornire analisi chiare, sintetiche e utili, anche a interlocutori non tecnici.'
   const contextText = context
     ? `\nHai ricevuto il seguente contesto aziendale:':\n${typeof context === 'string' ? context : JSON.stringify(context, null, 2)}`
     : '';
@@ -94,7 +89,7 @@ function AiChatDialog({ open, onClose, context, chatId, quickActions }: AiChatDi
         style={{ maxHeight: '90vh' }}
       >
         <div className="flex justify-between items-center mb-2">
-          <h2 className="flex gap-4 text-lg font-bold text-slate-200"> <BotMessageSquare/> Chat AI</h2>
+          <h2 className="text-lg font-bold text-slate-200">Chat AI CSV</h2>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-red-400 text-xl"
@@ -103,7 +98,7 @@ function AiChatDialog({ open, onClose, context, chatId, quickActions }: AiChatDi
             &times;
           </button>
         </div>
-        {/* Area contesto */}
+
         <div
           className="flex-1 overflow-y-auto bg-slate-900 rounded-lg p-3 mb-3 border border-slate-700"
           style={{ minHeight: 200, maxHeight: 350 }}
@@ -120,9 +115,7 @@ function AiChatDialog({ open, onClose, context, chatId, quickActions }: AiChatDi
                     : 'inline-block bg-slate-700 text-slate-100 px-3 py-2 rounded-xl max-w-[80%]'
                 }
               >
-                <div className="prose prose-invert max-w-none">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                </div>
+                {msg.content}
               </div>
             </div>
           ))}
@@ -134,22 +127,7 @@ function AiChatDialog({ open, onClose, context, chatId, quickActions }: AiChatDi
             {error}
           </div>
         )}
-        {/* Pulsanti azioni rapide */}
-        {quickActions && quickActions.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {quickActions.map((action) => (
-              <button
-                key={action.label}
-                className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-full text-xs"
-                onClick={() => setInput(action.prompt)}
-                type="button"
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
-        )}
-        {/* Are di risposta */}
+
         <div className={`flex gap-2 transition-opacity ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
           <textarea
             className="flex-1 p-2 rounded-lg bg-slate-900 text-slate-200 border border-slate-600 resize-none"
