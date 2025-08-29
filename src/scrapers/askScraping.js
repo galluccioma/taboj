@@ -3,7 +3,6 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import converter from 'json-2-csv';
 import fs from 'fs';
 import path from 'path';
-import axios from 'axios';
 import { stopFlag, launchBrowser } from '../utils/config';
 import { safeSendMessage, sanitizeFilename } from '../utils/safeWindow.js';
 
@@ -31,7 +30,7 @@ export async function checkForCaptcha(page) {
  * Scraping "People Also Ask" con logging dettagliato
  */
 export async function scrapePeopleAlsoAsk(searchString, browser, win, existingPage = null, maxToProcess = 50) {
-  if (win && win.webContents) safeSendMessage(win, `[ASK] Avvio scraping per: ${searchString}`);
+  if (win && win.webContents) safeSendMessage(win, 'status', `[ASK] Avvio scraping per: ${searchString}`);
   const page = existingPage || (await browser.newPage());
   if (!existingPage) {
     const url = `https://www.google.com/search?hl=it&gl=it&ie=UTF-8&oe=UTF-8&q=${encodeURIComponent(searchString)}`;
@@ -39,7 +38,7 @@ export async function scrapePeopleAlsoAsk(searchString, browser, win, existingPa
   }
   // CAPTCHA
   if (await checkForCaptcha(page)) {
-    safeSendMessage(win,
+    safeSendMessage(win, 'status',
       "[!] CAPTCHA rilevato! Risolvilo manualmente nel browser, poi clicca 'Continua' per proseguire."
     );
     // Do NOT close the page; return it for reuse
@@ -52,14 +51,14 @@ export async function scrapePeopleAlsoAsk(searchString, browser, win, existingPa
     await new Promise((resolve) => {
       setTimeout(resolve, 3000);
     });
-    safeSendMessage(win, '[ASK] Cookie accettati.');
+    safeSendMessage(win, 'status', '[ASK] Cookie accettati.');
   }
   try {
     await page.waitForSelector('div.related-question-pair[data-q]', {
       timeout: 5000
     });
   } catch (e) {
-    safeSendMessage(win, `[error] Nessuna domanda trovata per: ${searchString}`);
+    safeSendMessage(win, 'status', `[error] Nessuna domanda trovata per: ${searchString}`);
     return [];
   }
   const results = [];
@@ -68,7 +67,7 @@ export async function scrapePeopleAlsoAsk(searchString, browser, win, existingPa
   let reachedLimit = false;
   while (results.length < maxToProcess && !reachedLimit) {
     if (stopFlag.value) {
-      safeSendMessage(win, "[STOP] Scraping interrotto dall'utente. Salvataggio dati...");
+      safeSendMessage(win, 'status', "[STOP] Scraping interrotto dall'utente. Salvataggio dati...");
       break;
     }
     const faqContainers = await page.$$('div.related-question-pair[data-q]');
@@ -81,7 +80,7 @@ export async function scrapePeopleAlsoAsk(searchString, browser, win, existingPa
         // skip
       } else {
         processedQuestions.add(q);
-        safeSendMessage(win, `[process] Domanda #${results.length + 1}: "${q}"`);
+        safeSendMessage(win, 'status', `[process] Domanda #${results.length + 1}: "${q}"`);
         try {
           await container.click();
           await new Promise((resolve) => { setTimeout(resolve, 3000); });
@@ -106,7 +105,7 @@ export async function scrapePeopleAlsoAsk(searchString, browser, win, existingPa
             }
             return text.trim();
           }, q);
-          safeSendMessage(win,
+          safeSendMessage(win, 'status',
             `[success] Descrizione trovata: ${description ? `${description.slice(0, 80)}...` : '[vuota]'}`
           );
           results.push({ question: q, description });
@@ -115,14 +114,14 @@ export async function scrapePeopleAlsoAsk(searchString, browser, win, existingPa
             break;
           }
         } catch (e) {
-          safeSendMessage(win, `[error] Errore nella domanda "${q}": ${e.message}`);
+          safeSendMessage(win, 'status', `[error] Errore nella domanda "${q}": ${e.message}`);
         }
       }
     }
     if (reachedLimit) break;
     await new Promise((resolve) => { setTimeout(resolve, 3000); });
   }
-  safeSendMessage(win, `[ASK] Completato. Trovate ${results.length} domande.`);
+  safeSendMessage(win, 'status', `[ASK] Completato. Trovate ${results.length} domande.`);
   return results;
 }
 
@@ -130,7 +129,7 @@ export async function scrapePeopleAlsoAsk(searchString, browser, win, existingPa
  * Scraping delle "Ricerche Correlate" con logging dettagliato
  */
 async function scrapeRelatedSearches(searchString, browser, win, maxToProcess = 10) {
-  if (win && win.webContents) safeSendMessage(win, `[RICERCHE CORRELATE] Avvio scraping per: ${searchString}`);
+  if (win && win.webContents) safeSendMessage(win, 'status', `[RICERCHE CORRELATE] Avvio scraping per: ${searchString}`);
   const page = await browser.newPage();
   const url = `https://www.google.com/search?hl=it&gl=it&ie=UTF-8&oe=UTF-8&q=${encodeURIComponent(searchString)}`;
   await page.goto(url, { waitUntil: 'networkidle2' });
@@ -139,12 +138,12 @@ async function scrapeRelatedSearches(searchString, browser, win, maxToProcess = 
   if (acceptAllButton) {
     await acceptAllButton.click();
     await new Promise((resolve) => setTimeout(resolve, 3000));
-    safeSendMessage(win, '[RICERCHE CORRELATE] Cookie accettati.');
+    safeSendMessage(win, 'status', '[RICERCHE CORRELATE] Cookie accettati.');
   }
   try {
     await page.waitForSelector('div#search', { timeout: 5000 });
   } catch (e) {
-    safeSendMessage(win, `[error] Nessun risultato SERP per: ${searchString}`);
+    safeSendMessage(win, 'status', `[error] Nessun risultato SERP per: ${searchString}`);
     await page.close();
     return [];
   }
@@ -183,7 +182,7 @@ async function scrapeRelatedSearches(searchString, browser, win, maxToProcess = 
     }
     return results;
   }, maxToProcess);
-  safeSendMessage(win, `[RICERCHE CORRELATE] Completato. Trovate ${related.length} ricerche correlate.`);
+  safeSendMessage(win, 'status', `[RICERCHE CORRELATE] Completato. Trovate ${related.length} ricerche correlate.`);
   await page.close();
   return related;
 }
@@ -192,13 +191,13 @@ async function scrapeRelatedSearches(searchString, browser, win, maxToProcess = 
  * Funzione principale per scraping FAQ/Ask/Ricerche Correlate con logging dettagliato
  */
 export async function performFaqScraping(searchString, folderPath, win, headless, useProxy = false, customProxy = '', maxToProcess = 50, scrapeTypes = ['ask']) {
-  safeSendMessage(win, 'reset-logs');
+  safeSendMessage(win, 'status', 'reset-logs');
   stopFlag.value = false;
   let outFolder = folderPath;
   if (!outFolder) {
     const baseOutput = global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output');
     outFolder = path.join(baseOutput, 'faq');
-    safeSendMessage(win, `[INFO] i file saranno salvati nella cartella: ${outFolder}`);
+    safeSendMessage(win, 'status', `[INFO] i file saranno salvati nella cartella: ${outFolder}`);
   }
   const searchQueries = searchString.split(',').map((q) => q.trim()).filter(Boolean);
   const startTime = new Date();
@@ -208,7 +207,7 @@ export async function performFaqScraping(searchString, folderPath, win, headless
     if (stopFlag.value) break;
     for (const query of searchQueries) {
       if (stopFlag.value) {
-        safeSendMessage(win, "[STOP] Scraping interrotto dall'utente. Salvataggio dati...");
+        safeSendMessage(win, 'status', "[STOP] Scraping interrotto dall'utente. Salvataggio dati...");
         break;
       }
       const proxyToUse = useProxy ? customProxy : null;
@@ -217,29 +216,29 @@ export async function performFaqScraping(searchString, folderPath, win, headless
       let filename = '';
       try {
         if (type === 'ask') {
-          safeSendMessage(win, `\n[ASK] Sto cercando: ${query}`);
-          data = await scrapePeopleAlsoAsk(query, browser, win, null, maxToProcess);
+          safeSendMessage(win, 'status', `\n[ASK] Sto cercando: ${query}`);
+          data = await scrapePeopleAlsoAsk(query, browser, win, 'status', null, maxToProcess);
           filename = `people_also_ask-${sanitizeFilename(query)}.csv`;
         } else if (type === 'ricerche_correlate') {
-          safeSendMessage(win, `\n[RICERCHE CORRELATE] Sto cercando: ${query}`);
-          data = await scrapeRelatedSearches(query, browser, win, maxToProcess);
+          safeSendMessage(win, 'status', `\n[RICERCHE CORRELATE] Sto cercando: ${query}`);
+          data = await scrapeRelatedSearches(query, browser, win, 'status', maxToProcess);
           filename = `ricerche_correlate-${sanitizeFilename(query)}.csv`;
         }
         if (data && data.length > 0) {
           const csv = await converter.json2csv(data.map((d) => ({ ...d, searchQuery: query })));
           fs.writeFileSync(path.join(outFolder, filename), csv, 'utf-8');
-          safeSendMessage(win, `[+] Record salvati nel file CSV (${filename})`);
+          safeSendMessage(win, 'status', `[+] Record salvati nel file CSV (${filename})`);
         } else {
-          safeSendMessage(win, `[!] Nessun dato trovato per ${type} - ${query}`);
+          safeSendMessage(win, 'status', `[!] Nessun dato trovato per ${type} - ${query}`);
         }
       } catch (err) {
-        safeSendMessage(win, `[errore] Errore nella ricerca (${type}): ${query} - ${err.message}`);
+        safeSendMessage(win, 'status', `[errore] Errore nella ricerca (${type}): ${query} - ${err.message}`);
       } finally {
         await browser.close();
       }
     }
   }
-  safeSendMessage(win, `[success] Tutti i task completati in ${(Date.now() - startTime.getTime()) / 1000}s`);
+  safeSendMessage(win, 'status', `[✅] Dati salvati con successo.`);
 }
 
 export function askUserToSolveCaptcha() {
@@ -252,7 +251,7 @@ export function askUserToSolveCaptcha() {
 
 export async function saveFaqData(data, startTime, folderPath, win, searchString) {
   if (data.length === 0) {
-    safeSendMessage(win, '[!] Nessun dato da salvare.');
+    safeSendMessage(win, 'status', '[!] Nessun dato da salvare.');
     return;
   }
   const csv = await converter.json2csv(data);
@@ -261,8 +260,8 @@ export async function saveFaqData(data, startTime, folderPath, win, searchString
   // Ensure the folder exists before writing
   fs.mkdirSync(folderPath, { recursive: true });
   fs.writeFileSync(path.join(folderPath, filename), csv, 'utf-8');
-  safeSendMessage(win, `[+] Record salvati nel file CSV (${filename})`);
-  safeSendMessage(win,
+  safeSendMessage(win, 'status', `[+] Record salvati nel file CSV (${filename})`);
+  safeSendMessage(win, 'status',
     `[success] Scritti ${data.length} record in ${(Date.now() - startTime.getTime()) / 1000}s`
   );
 }

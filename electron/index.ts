@@ -3,14 +3,12 @@ import path, { join } from 'path';
 import os from 'os';
 import fs from 'fs';
 import windowStateKeeper from 'electron-window-state';
-import { parse } from 'csv-parse/sync';
-
-import chatWithAI from '../src/utils/aianalysis.js'
-
 
 // Packages
 import { BrowserWindow, app, ipcMain, IpcMainEvent, nativeTheme, dialog, shell } from 'electron';
 import isDev from 'electron-is-dev';
+import { parse } from 'csv-parse/sync';
+
 import { performMapsScraping } from '../src/scrapers/mapsScraping.js';
 import { performDnsScraping } from '../src/scrapers/dnsScraping.js';
 import { performFaqScraping } from '../src/scrapers/askScraping.js';
@@ -18,7 +16,9 @@ import { performBackupSite } from '../src/scrapers/backupSite.js';
 import performGoogleAdsScraping from '../src/scrapers/googleAds.js';
 import performMetaAdsScraping from '../src/scrapers/metaAds.js';
 import { stopFlag } from '../src/utils/config';
+
 // AI Analisi
+import chatWithAI from '../src/utils/aianalysis.js'
 
 // Funzione helper per inviare messaggi IPC in modo sicuro
 function safeSendMessage(win: BrowserWindow | null, channel: string, ...args: any[]) {
@@ -80,9 +80,6 @@ function createWindow() {
 
   // Associa lo stato alla finestra
   mainWindowState.manage(window);
-
-
-
 
 
   // Resto del tuo codice...
