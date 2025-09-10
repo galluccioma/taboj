@@ -1,6 +1,6 @@
 {
   "name": "taboj",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "license": "MIT",
   "main": "dist-electron/index.js",
   "author": {
@@ -92,6 +92,18 @@
   },
   "build": {
     "asar": true,
+    "mac": {
+  "target": [
+    {
+      "target": "zip",
+      "arch": ["x64"]
+    },
+    {
+      "target": "zip",
+      "arch": ["arm64"]
+    }
+  ]
+},
     "files": [
       "dist-electron",
       "dist-vite",
@@ -104,7 +116,8 @@
       {
         "provider": "github",
         "owner": "galluccioma",
-        "repo": "taboj"
+        "repo": "taboj",
+        "releaseType": "release" 
       }
     ]
   },
