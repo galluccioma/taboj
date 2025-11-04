@@ -19,6 +19,7 @@
 
 ---
 
+
 ## Funzionalità
 
 - **Google Maps Scraper**: Estrae dettagli aziendali (nome, indirizzo, telefono, sito web, valutazioni, email, partita IVA, ragione sociale) dai risultati di ricerca di Google Maps.

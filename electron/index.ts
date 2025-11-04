@@ -643,7 +643,7 @@ ipcMain.handle('get-app-settings', async () => {
 
 // IPC per chat AI conversazionale
 ipcMain.handle('ai-chat', async (_event, { messages, aiToken, aiModel }) => {
-  return await chatWithAI({ messages, aiToken, aiModel });
+  return chatWithAI({ messages, aiToken, aiModel });
 });
 
 

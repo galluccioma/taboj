@@ -54,7 +54,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
       if (
         message.includes('[✅] Dati salvati con successo.') ||
         message.includes('[💾] Dati salvati dopo interruzione.') ||
-        message.includes('[STOP] Scraping interrotto dall\'utente.') ||
+        message.includes("[STOP] Scraping interrotto dall'utente.") ||
         message.includes('[+] Record salvati nel file CSV')
       ) {
         setScraping(false);
@@ -185,7 +185,8 @@ function AskScraperForm({ viewMode = 'scraping' }) {
           <p className="text-2xl font-bold mb-2">🔍 Ciao {username}</p>
           <h1 className="text-2xl font-bold mb-2">💬 Benvenuto su FAQ & Correlati Scraper</h1>
           <p className="text-lg mb-4">
-            Questo strumento permette di cercare e scaricare domande frequenti (FAQ) o Ricerche Correlate dalla SERP di Google
+            Questo strumento permette di cercare e scaricare domande frequenti (FAQ) o Ricerche Correlate dalla SERP di
+            Google
           </p>
           <input
             type="text"
@@ -213,6 +214,15 @@ function AskScraperForm({ viewMode = 'scraping' }) {
                 disabled={scraping}
               />
               Ricerche correlate
+            </label>
+            <label className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={scrapeTypes.includes('geo_link')}
+                onChange={() => handleScrapeTypeChange('geo_link')}
+                disabled={scraping}
+              />
+              AI Overwiew Links
             </label>
           </div>
           <div className="mb-2">
@@ -243,11 +253,7 @@ function AskScraperForm({ viewMode = 'scraping' }) {
       )}
       {selectedPage && viewMode === 'dashboard' && (
         <section className="max-w-6xl bg-slate-800 rounded shadow p-4 mt-6">
-          <Dashboard
-            data={selectedPage}
-            csvPath={currentCsvPath}
-            onBack={() => setSelectedPage(null)}
-          />
+          <Dashboard data={selectedPage} csvPath={currentCsvPath} onBack={() => setSelectedPage(null)} />
         </section>
       )}
       {viewMode === 'scraping' && (

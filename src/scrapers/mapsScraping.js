@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import cheerio from 'cheerio';
 import converter from 'json-2-csv';
 import fs from 'fs';
 import path from 'path';
@@ -12,51 +13,43 @@ import { safeSendMessage } from '../utils/safeWindow';
 puppeteer.use(StealthPlugin());
 stopFlag.value = false;
 
-// Funzione per estrarre la mail usando Puppeteer
-async function extractMailWithPuppeteer(page) {
-  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-
-  // 1. mailto
-  const mailtoLinks = await page
-    .$$eval('a[href^="mailto:"]', (els) =>
-      els.map((el) =>
-        el
-          .getAttribute('href')
-          .replace(/^mailto:/, '')
-          .trim()
-      )
-    )
-    .catch(() => []);
-  if (mailtoLinks.length > 0) return mailtoLinks[0];
-
-  // 2. attributi vari
-  const attrs = await page
-    .$$eval('[href], [data-email], [data-contact]', (els) =>
-      els.map((el) => Object.values(el.attributes).map((a) => a.value)).flat()
-    )
-    .catch(() => []);
-  const attrEmail = attrs.find((val) => emailRegex.test(val));
-  if (attrEmail) return attrEmail.match(emailRegex)[0];
-
-  // 3. testo visibile
-  const bodyText = await page.evaluate(() => document.body.innerText);
-  const matches = bodyText.match(emailRegex);
-  if (matches && matches.length > 0) return matches[0];
-
-  return null;
+// Funzione per estrarre la mail dal sito web
+function extractMail(html) {
+  const $ = cheerio.load(html);
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g;
+  let email = null;
+  $('body *').each((_, el) => {
+    const text = $(el).text();
+    const matches = text.match(emailRegex);
+    if (matches && matches.length > 0) {
+      [email] = matches;
+      return false;
+    }
+    return true;
+  });
+  return email;
 }
 
 // Funzione per estrarre la partita iva dal sito
-async function extractPivaWithPuppeteer(page) {
+function extractPiva(html) {
+  const $ = cheerio.load(html);
   const pivaRegex = /\b\d{11}\b/g;
-  const bodyText = await page.evaluate(() => document.body.innerText);
-  const matches = bodyText.match(pivaRegex);
-  return matches ? matches[0] : null;
+  let piva = null;
+  $('body *').each((_, el) => {
+    const text = $(el).text();
+    const matches = text.match(pivaRegex);
+    if (matches && matches.length > 0) {
+      [piva] = matches;
+      return false;
+    }
+    return true;
+  });
+  return piva;
 }
 
 // Funzione che chiama l'API checkVatService per verificare la correttezza della partita iva
-async function checkVat(piva) {
-  const cleanedPiva = piva.replace(/\D/g, '');
+  async function checkVat(piva) {
+    const cleanedPiva = piva.replace(/\D/g, '');
   if (cleanedPiva.length !== 11) return null;
 
   const url = 'http://ec.europa.eu/taxation_customs/vies/services/checkVatService';
@@ -112,34 +105,29 @@ async function checkVat(piva) {
 async function extractFatturato(pivaNumber, browser) {
   try {
     const searchPage = await browser.newPage();
-    await searchPage.goto(`https://www.google.com/search?q=${pivaNumber}`, {
-      waitUntil: 'domcontentloaded',
-      timeout: 30000
-    });
+    await searchPage.goto(`https://www.google.com/search?q=${pivaNumber}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
     // Accept cookies if present
-    const acceptBtn = await searchPage.$(
-      'button[aria-label="Accept all"], button[aria-label="Accetta tutto"], #L2AGLb'
-    );
-    if (acceptBtn) {
-      try {
-        await acceptBtn.click();
+    const acceptBtn = await searchPage.$('button[aria-label="Accept all"], button[aria-label="Accetta tutto"], #L2AGLb');
+    if (acceptBtn) { 
+      try { 
+        await acceptBtn.click(); 
       } catch (e) {
         // Ignore click errors
-      }
+      } 
     }
-    await new Promise((resolve) => {
+    await new Promise(resolve => {
       setTimeout(resolve, 2000);
     });
 
     // Try to find the ufficiocamerale.it link robustly
     let ufficioLink = null;
     // 1. Try to get from <a> tags
-    const links = await searchPage.$$eval('a', (as) => as.map((a) => a.href));
-    ufficioLink = links.find((href) => href.includes('ufficiocamerale.it') && href.match(/\d{11}/));
+    const links = await searchPage.$$eval('a', as => as.map(a => a.href));
+    ufficioLink = links.find(href => href.includes('ufficiocamerale.it') && href.match(/\d{11}/));
     // 2. If not found, try to get from visible text
     if (!ufficioLink) {
-      ufficioLink = await searchPage.$$eval('a', (as) => {
+      ufficioLink = await searchPage.$$eval('a', as => {
         for (const a of as) {
           if (a.innerText && a.innerText.includes('ufficiocamerale.it')) return a.href;
         }
@@ -154,10 +142,10 @@ async function extractFatturato(pivaNumber, browser) {
     // Try to open the link and extract Fatturato
     if (ufficioLink) {
       await searchPage.goto(ufficioLink, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await new Promise((resolve) => {
+      await new Promise(resolve => {
         setTimeout(resolve, 2000);
       });
-      const fatturato = await searchPage.$$eval('li.list-group-item', (els) => {
+      const fatturato = await searchPage.$$eval('li.list-group-item', els => {
         for (const el of els) {
           const text = el.innerText;
           if (text.includes('Fatturato:')) {
@@ -189,19 +177,13 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
   )}&oq=${encodeURIComponent(searchString)}&src=2`;
 
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  if (stopFlag.value) {
-    await page.close();
-    return scrapeData;
-  }
+  if (stopFlag.value) { await page.close(); return scrapeData; }
 
   const acceptAllButton = await page.$('button[aria-label="Accept all"], button[aria-label="Accetta tutto"], #L2AGLb');
   if (acceptAllButton) {
     await acceptAllButton.click();
     await delay(3000);
-    if (stopFlag.value) {
-      await page.close();
-      return scrapeData;
-    }
+    if (stopFlag.value) { await page.close(); return scrapeData; }
   }
 
   let totalResults = 'UNKNOWN';
@@ -248,24 +230,20 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
           let ragioneSociale = null;
           let fatturato = null;
 
-          // recupero mail standard
-          // recupero mail standard
           if (website && website !== 'Nessun Sito') {
             try {
               const websiteURL = website.startsWith('http') ? website : `https://${website}`;
-              const sitePage = await browser.newPage();
-              await sitePage.goto(websiteURL, { waitUntil: 'domcontentloaded', timeout: 20000 });
-
-              mail = await extractMailWithPuppeteer(sitePage);
-              piva = await extractPivaWithPuppeteer(sitePage);
-
-              await sitePage.close();
-
+              const response = await axios.get(websiteURL, { timeout: 12000 });
+              if (stopFlag.value) break;
+              const html = response.data;
+              mail = extractMail(html);
+              piva = extractPiva(html);
               if (piva && /^\d{11}$/.test(piva)) {
                 safeSendMessage(win, 'status', `🔍 Verifica VIES per P.IVA: ${piva}`);
-                await delay(2000);
+                await delay(2000); // Importante: evita blocchi dal server
                 if (stopFlag.value) break;
                 const vatData = await checkVat(piva);
+                if (stopFlag.value) break;
                 if (vatData) {
                   ragioneSociale = vatData.name;
                 } else {
@@ -275,9 +253,7 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
                 if (stopFlag.value) break;
                 safeSendMessage(win, 'status', `💸 scraping FATTURATO per P.IVA: ${piva}`);
               }
-            } catch (err) {
-              console.error(`[x] Errore durante scraping sito ${website}:`, err.message);
-            }
+            } catch (_) { if (stopFlag.value) break; }
           }
 
           scrapeData.push({
@@ -290,7 +266,7 @@ export async function scrapeGoogleMaps(searchString, browser, win) {
             mail,
             piva,
             ragioneSociale,
-            fatturato
+            fatturato,
           });
           safeSendMessage(win, 'status', `[+] (${index + 1}/${cards.length}) ${name}`);
           await delay(1000);
@@ -336,8 +312,7 @@ export async function saveMapsData(data, startTime, folderPath, win, searchQueri
   const filename = `maps_output-${queriesStr}-${Date.now()}.csv`;
   fs.writeFileSync(path.join(folderPath, filename), csv, 'utf-8');
   safeSendMessage(win, 'status', `[+] Record salvati nel file CSV (${filename})`);
-  safeSendMessage(
-    win,
+  safeSendMessage(win,
     'status',
     `[success] Scritti ${data.length} record in ${(Date.now() - startTime.getTime()) / 1000}s`
   );
@@ -347,14 +322,10 @@ export async function saveMapsData(data, startTime, folderPath, win, searchQueri
 export async function performMapsScraping(searchString, folderPath, win, headless, useProxy, customProxy) {
   stopFlag.value = false; // Reset stop flag at the start
   if (!folderPath) {
-    const baseOutput = global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output');
+    const baseOutput = (global.getBaseOutputFolder ? global.getBaseOutputFolder() : path.join(process.cwd(), 'output'));
     folderPath = path.join(baseOutput, 'maps');
-    safeSendMessage(win, 'status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);
-  }
-  const searchQueries = searchString
-    .split(',')
-    .map((q) => q.trim())
-    .filter(Boolean);
+    safeSendMessage(win, 'status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);  }
+  const searchQueries = searchString.split(',').map(q => q.trim()).filter(Boolean);
   let allData = [];
   let stopped = false;
   let browser = null;
@@ -366,29 +337,20 @@ export async function performMapsScraping(searchString, folderPath, win, headles
         safeSendMessage(win, 'status', `🔍 Cercando: ${query}`);
         const proxy = useProxy ? customProxy : null;
         browser = await launchBrowser({ headless, proxy });
-        if (stopFlag.value) {
-          await browser.close();
-          break;
-        }
+        if (stopFlag.value) { await browser.close(); break; }
         const data = await scrapeGoogleMaps(query, browser, win);
         await browser.close();
         browser = null;
-        allData.push(...data.map((d) => ({ ...d, searchQuery: query })));
+        allData.push(...data.map(d => ({ ...d, searchQuery: query })));
         if (stopFlag.value) break;
       } catch (error) {
-        if (browser) {
-          await browser.close();
-          browser = null;
-        }
+        if (browser) { await browser.close(); browser = null; }
         safeSendMessage(win, 'status', `Errore durante la ricerca "${query}": ${error.message}`);
         if (stopFlag.value) break;
       }
     }
   } finally {
-    if (browser) {
-      await browser.close();
-      browser = null;
-    }
+    if (browser) { await browser.close(); browser = null; }
     // Salva subito il CSV se interrotto
     if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true });
     const before = allData.length;

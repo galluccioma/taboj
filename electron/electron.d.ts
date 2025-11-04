@@ -21,7 +21,7 @@ declare global {
         customProxy: string,
         maxToProcess?: number
       ) => void;
-      //Overload for dns
+      // Overload for dns
       startScraping: (
         searchString: string,
         scrapingType: 'dns' ,
