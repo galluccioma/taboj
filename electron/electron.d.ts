@@ -52,7 +52,8 @@ declare global {
         useProxy: boolean,
         customProxy: string,
         fullBackup: boolean,
-        downloadMedia: boolean
+        downloadMedia: boolean,
+        downloadText:boolean
       ) => void;
       stopScraping: () => void;
       onStatus: (cb: (message: string) => void) => void;

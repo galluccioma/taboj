@@ -170,7 +170,7 @@ async function extractFatturato(pivaNumber, browser) {
 export async function scrapeGoogleMaps(searchString, browser, win) {
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const page = await browser.newPage();
-  let scrapeData = [];
+  const scrapeData = [];
 
   const url = `https://www.google.com/localservices/prolist?hl=en-GB&gl=it&ssta=1&q=${encodeURIComponent(
     searchString
@@ -327,7 +327,7 @@ export async function performMapsScraping(searchString, folderPath, win, headles
     safeSendMessage(win, 'status', `[INFO] i file saranno salvati nella cartella: ${folderPath}`);  }
   const searchQueries = searchString.split(',').map(q => q.trim()).filter(Boolean);
   let allData = [];
-  let stopped = false;
+  const stopped = false;
   let browser = null;
 
   try {

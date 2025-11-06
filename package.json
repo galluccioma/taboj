@@ -41,6 +41,7 @@
     "chrome-launcher": "^1.2.0",
     "csv-parse": "^5.6.0",
     "csv-writer": "^1.6.0",
+    "docx": "^9.5.1",
     "electron-is-dev": "^2.0.0",
     "electron-updater": "^6.6.2",
     "electron-window-state": "^5.0.3",
@@ -52,6 +53,7 @@
     "install": "^0.13.0",
     "json-2-csv": "^5.5.9",
     "jsonfile": "^6.1.0",
+    "jspdf": "^3.0.3",
     "lighthouse": "^12.7.1",
     "lucide-react": "^0.525.0",
     "mkdirp": "^3.0.1",
@@ -93,17 +95,21 @@
   "build": {
     "asar": true,
     "mac": {
-  "target": [
-    {
-      "target": "zip",
-      "arch": ["x64"]
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ]
     },
-    {
-      "target": "zip",
-      "arch": ["arm64"]
-    }
-  ]
-},
     "files": [
       "dist-electron",
       "dist-vite",
@@ -117,7 +123,7 @@
         "provider": "github",
         "owner": "galluccioma",
         "repo": "taboj",
-        "releaseType": "release" 
+        "releaseType": "release"
       }
     ]
   },

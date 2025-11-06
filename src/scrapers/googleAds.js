@@ -47,7 +47,7 @@ async function performGoogleAdsScraping(advertiser, folderPath, win, headless, u
       { query, useLegacySql: false },
       { headers: { Authorization: `Bearer ${tokens.token}` } }
     );
-    const jobId = response.data.jobReference.jobId;
+    const {jobId} = response.data.jobReference;
     const resultUrl = `https://bigquery.googleapis.com/bigquery/v2/projects/${projectId}/queries/${jobId}`;
     const result = await axios.get(resultUrl, {
       headers: { Authorization: `Bearer ${tokens.token}` },

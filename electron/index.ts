@@ -13,6 +13,7 @@ import { performMapsScraping } from '../src/scrapers/mapsScraping.js';
 import { performDnsScraping } from '../src/scrapers/dnsScraping.js';
 import { performFaqScraping } from '../src/scrapers/askScraping.js';
 import { performBackupSite } from '../src/scrapers/backupSite.js';
+import { performBackupTextOnly } from '../src/scrapers/backupSite.js';
 import performGoogleAdsScraping from '../src/scrapers/googleAds.js';
 import performMetaAdsScraping from '../src/scrapers/metaAds.js';
 import { stopFlag } from '../src/utils/config';
@@ -55,8 +56,6 @@ ipcMain.handle('get-assets-path', () => {
   return path.join(app.getAppPath(), 'assets');
 });
 
-
-
 function createWindow() {
   // Recupera lo stato precedente della finestra o imposta i default
   const mainWindowState = windowStateKeeper({
@@ -80,7 +79,6 @@ function createWindow() {
 
   // Associa lo stato alla finestra
   mainWindowState.manage(window);
-
 
   // Resto del tuo codice...
   const port = process.env.PORT || 3000;
@@ -226,25 +224,48 @@ async function performScraping(
   if (scrapingType === 'maps') {
     const { headless, useProxy, customProxy } = options;
     await performMapsScraping(searchString, folderPath, win, headless, useProxy, customProxy);
+
   } else if (scrapingType === 'faq') {
     const { headless, scrapeTypes, useProxy, customProxy, maxToProcess } = options;
     await performFaqScraping(searchString, folderPath, win, headless, useProxy, customProxy, maxToProcess, scrapeTypes);
+
   } else if (scrapingType === 'dns') {
     const { dnsRecordTypes, doAMail, doLighthouse, doWayback } = options;
     await performDnsScraping(searchString, folderPath, win, dnsRecordTypes || [], doAMail, doLighthouse, doWayback);
+
   } else if (scrapingType === 'backup') {
-    const { headless, useProxy, customProxy, fullBackup, downloadMedia } = options;
+    const { headless, useProxy, customProxy, fullBackup, downloadMedia, downloadText } = options;
+
+    // === DEVIAZIONE MODALITÀ SOLO TESTO ===
+    if (downloadText === true && fullBackup === false && downloadMedia === false) {
+      await performBackupTextOnly(searchString, folderPath, win, headless, useProxy, customProxy);
+      return; // IMPORTANTISSIMO: non proseguire verso altri rami
+    }
+
     if (typeof useProxy === 'boolean' && typeof customProxy === 'string' && typeof fullBackup === 'boolean') {
-      await performBackupSite(searchString, folderPath, win, headless, useProxy, customProxy, fullBackup, downloadMedia);
+      await performBackupSite(
+        searchString,
+        folderPath,
+        win,
+        headless,
+        useProxy,
+        customProxy,
+        fullBackup,
+        downloadMedia,
+        downloadText
+      );
     } else {
       await performBackupSite(searchString, folderPath, win, headless);
     }
+
   } else if (scrapingType === 'googleads') {
     const { headless, useProxy, customProxy, googleKeyFilePath, projectId } = options;
     await performGoogleAdsScraping(searchString, folderPath, win, headless, useProxy, customProxy, googleKeyFilePath, projectId);
+
   } else if (scrapingType === 'metaads') {
     const { headless, useProxy, customProxy, metaAdsAccessToken } = options;
     await performMetaAdsScraping(searchString, folderPath, win, headless, useProxy, customProxy, metaAdsAccessToken);
+
   } else {
     safeSendMessage(win, 'status', 'Tipo di scraping non valido.');
   }
@@ -260,29 +281,65 @@ ipcMain.handle(
       console.log('Nessuna finestra disponibile per lo scraping');
       return;
     }
-    
+
     const scrapingType = args[1];
-    
+
     try {
       if (scrapingType === 'faq') {
         // Restore positional argument passing for FAQ
         const [searchString, , folderPath, headless, scrapeTypes, useProxy, customProxy, maxToProcess] = args;
-        await safeAsyncOperation(() => performFaqScraping(searchString, folderPath, win, headless, useProxy, customProxy, maxToProcess, scrapeTypes));
+        await safeAsyncOperation(() =>
+          performFaqScraping(searchString, folderPath, win, headless, useProxy, customProxy, maxToProcess, scrapeTypes)
+        );
+
       } else if (scrapingType === 'maps') {
         const [searchString, , folderPath, headless, useProxy, customProxy] = args;
-        await safeAsyncOperation(() => performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy }));
+        await safeAsyncOperation(() =>
+          performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy })
+        );
+
       } else if (scrapingType === 'dns') {
         const [searchString, , folderPath, , dnsRecordTypes, doAMail, doLighthouse, doWayback] = args;
-        await safeAsyncOperation(() => performScraping(searchString, scrapingType, folderPath, win, { dnsRecordTypes, doAMail, doLighthouse, doWayback }));
+        await safeAsyncOperation(() =>
+          performScraping(searchString, scrapingType, folderPath, win, { dnsRecordTypes, doAMail, doLighthouse, doWayback })
+        );
+
       } else if (scrapingType === 'backup') {
-        const [searchString, , folderPath, headless, useProxy, customProxy, fullBackup, downloadMedia] = args;
-        await safeAsyncOperation(() => performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, fullBackup, downloadMedia }));
+        const [searchString, , folderPath, headless, useProxy, customProxy, fullBackup, downloadMedia, downloadText] = args;
+        await safeAsyncOperation(() =>
+          performScraping(searchString, scrapingType, folderPath, win, {
+            headless,
+            useProxy,
+            customProxy,
+            fullBackup,
+            downloadMedia,
+            downloadText
+          })
+        );
+
       } else if (scrapingType === 'googleads') {
         const [advertiser, , folderPath, headless, useProxy, customProxy, googleKeyFilePath, projectId] = args;
-        await safeAsyncOperation(() => performScraping(advertiser, scrapingType, folderPath, win, { headless, useProxy, customProxy, googleKeyFilePath, projectId }));
+        await safeAsyncOperation(() =>
+          performScraping(advertiser, scrapingType, folderPath, win, {
+            headless,
+            useProxy,
+            customProxy,
+            googleKeyFilePath,
+            projectId
+          })
+        );
+
       } else if (scrapingType === 'metaads') {
         const [searchString, , folderPath, headless, useProxy, customProxy, metaAdsAccessToken] = args;
-        await safeAsyncOperation(() => performScraping(searchString, scrapingType, folderPath, win, { headless, useProxy, customProxy, metaAdsAccessToken }));
+        await safeAsyncOperation(() =>
+          performScraping(searchString, scrapingType, folderPath, win, {
+            headless,
+            useProxy,
+            customProxy,
+            metaAdsAccessToken
+          })
+        );
+
       } else {
         safeSendMessage(win, 'status', 'Tipo di scraping non valido.');
       }
@@ -615,7 +672,6 @@ ipcMain.handle('open-backup-folder', async (_event, folderPath: string) => {
     return { success: false, error: err instanceof Error ? err.message : String(err) };  }
 });
 
-
 ipcMain.handle('save-app-settings', async (_event, settings) => {
   try {
     const fsSettingsPath = path.join(app.getPath('userData'), 'app_settings.json');
@@ -645,5 +701,3 @@ ipcMain.handle('get-app-settings', async () => {
 ipcMain.handle('ai-chat', async (_event, { messages, aiToken, aiModel }) => {
   return chatWithAI({ messages, aiToken, aiModel });
 });
-
-

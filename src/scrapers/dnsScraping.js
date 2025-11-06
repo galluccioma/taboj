@@ -3,8 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 import { execFile } from 'child_process';
-import { stopFlag } from '../utils/config';
 import dns from 'dns/promises'; // <--- aggiunto per le query DNS
+import { stopFlag } from '../utils/config';
 import { safeSendMessage, sanitizeFilename } from '../utils/safeWindow.js';
 
 
@@ -51,7 +51,7 @@ async function getWaybackData(url, win) {
       },
     });
 
-    const data = res.data;
+    const {data} = res;
     const snapshots = data.slice(1);
     const total = snapshots.length;
 
